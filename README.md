@@ -78,4 +78,4 @@ You can select a specific provider configuration by passing the `alias` argument
 
 ## License
 
-`LNotification` is released under the [GNU General Public License v3.0 or later](LICENSE).
+`LNotification` is released under the [GNU General Public License v3.0](LICENSE).

@@ -50,9 +50,19 @@ Write-Host ""
 # Step 5: Pack
 Write-Host "[5/5] Creating NuGet package..." -ForegroundColor Yellow
 if (Test-Path ./artifacts) { Remove-Item ./artifacts -Recurse -Force }
+
+# Test both release and preview packages
 dotnet pack src/LNotification/LNotification.csproj --no-build --configuration Release --output ./artifacts
 if ($LASTEXITCODE -ne 0) { 
     Write-Host "✗ Pack failed" -ForegroundColor Red
+    exit 1 
+}
+
+# Test preview package
+$version = (Select-String -Path "src/LNotification/LNotification.csproj" -Pattern "<Version>(.*)</Version>").Matches.Groups[1].Value
+dotnet pack src/LNotification/LNotification.csproj --no-build --configuration Release --output ./artifacts -p:PackageVersion="$version-preview"
+if ($LASTEXITCODE -ne 0) { 
+    Write-Host "✗ Preview pack failed" -ForegroundColor Red
     exit 1 
 }
 Write-Host "✓ Pack succeeded" -ForegroundColor Green
@@ -60,9 +70,10 @@ Write-Host ""
 
 # Summary
 Write-Host "=== Verification Complete ===" -ForegroundColor Cyan
-Write-Host "Package created in ./artifacts/" -ForegroundColor Green
+Write-Host "Packages created in ./artifacts/" -ForegroundColor Green
 Get-ChildItem ./artifacts/*.nupkg | ForEach-Object {
-    Write-Host "  → $($_.Name)" -ForegroundColor White
+    $prerelease = if ($_.Name -match "-preview") { " (pre-release)" } else { "" }
+    Write-Host "  → $($_.Name)$prerelease" -ForegroundColor White
 }
 Write-Host ""
 Write-Host "Ready to publish! 🚀" -ForegroundColor Green

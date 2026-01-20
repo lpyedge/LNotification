@@ -47,12 +47,14 @@ jobs:
     
     - name: Pack
       run: |
-        PACK_CMD="dotnet pack src/LNotification/LNotification.csproj --no-build --configuration Release --output ./artifacts"
         if [[ -n "${VERSION_SUFFIX:-}" ]]; then
-          PACK_CMD="$PACK_CMD /p:VersionSuffix=$VERSION_SUFFIX"
+          echo "Packing pre-release version with suffix: $VERSION_SUFFIX"
+          VERSION=$(grep '<Version>' src/LNotification/LNotification.csproj | sed 's/.*<Version>\(.*\)<\/Version>/\1/')
+          dotnet pack src/LNotification/LNotification.csproj --no-build --configuration Release --output ./artifacts -p:PackageVersion="${VERSION}-${VERSION_SUFFIX}"
+        else
+          echo "Packing release version"
+          dotnet pack src/LNotification/LNotification.csproj --no-build --configuration Release --output ./artifacts
         fi
-        echo "$PACK_CMD"
-        eval "$PACK_CMD"
     
     - name: Push to NuGet
       run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
