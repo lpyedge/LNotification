@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
@@ -62,6 +63,11 @@ public sealed class EmailProvider : NotificationProviderBase
         string body,
         bool isHtml)
     {
+        if (config.To == null || config.To.Count == 0)
+        {
+            throw new InvalidOperationException("EmailConfig.To cannot be empty");
+        }
+
         using var mailMessage = new MailMessage
         {
             From = new MailAddress(
@@ -76,7 +82,10 @@ public sealed class EmailProvider : NotificationProviderBase
 
         foreach (var to in config.To)
         {
-            mailMessage.To.Add(to);
+            if (!string.IsNullOrWhiteSpace(to))
+            {
+                mailMessage.To.Add(to);
+            }
         }
 
         if (config.Cc?.Count > 0)

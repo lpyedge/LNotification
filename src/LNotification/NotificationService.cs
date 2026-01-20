@@ -88,21 +88,26 @@ public sealed class NotificationService
 
     private NotificationOptions GetOptions()
     {
-        if (!_reloadToken.HasChanged)
+        var currentToken = _reloadToken;
+        if (!currentToken.HasChanged)
         {
             return _options;
         }
 
         lock (_optionsLock)
         {
-            if (!_reloadToken.HasChanged)
+            // 重新检查,因为其他线程可能已经更新
+            if (_reloadToken == currentToken && currentToken.HasChanged)
             {
-                return _options;
+                var newOptions = NotificationOptionsBinder.Bind(_configuration.Configuration);
+                var newToken = _configuration.Configuration.GetReloadToken();
+                
+                // 先清空缓存,再更新配置
+                _providerCache.Clear();
+                _options = newOptions;
+                _reloadToken = newToken;
             }
-
-            _options = NotificationOptionsBinder.Bind(_configuration.Configuration);
-            _reloadToken = _configuration.Configuration.GetReloadToken();
-            _providerCache.Clear();
+            
             return _options;
         }
     }
@@ -119,7 +124,7 @@ public sealed class NotificationService
         var notificationConfiguration = new NotificationConfiguration(configuration);
 
         services.AddSingleton(notificationConfiguration);
-        services.AddHttpClient(NotificationHttpClient.Name, (sp, client) =>
+        services.AddHttpClient(NotificationProviderBase.NotificationHttpClient, (sp, client) =>
         {
             var options = NotificationOptionsBinder.Bind(
                 sp.GetRequiredService<NotificationConfiguration>().Configuration);

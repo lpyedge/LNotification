@@ -9,6 +9,8 @@ namespace LNotification.Internal;
 
 public abstract class NotificationProviderBase
 {
+    internal const string NotificationHttpClient = "LNotificationHttpClient";
+
     protected readonly IHttpClientFactory HttpClientFactory;
     protected readonly ILogger Logger;
 

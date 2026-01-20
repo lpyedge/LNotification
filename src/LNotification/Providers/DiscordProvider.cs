@@ -30,17 +30,25 @@ public sealed class DiscordProvider : NotificationProviderBase
             content = $"{Emoji(level)} {message}"
         };
 
-        var client = HttpClientFactory.CreateClient(NotificationHttpClient.Name);
+        var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
         var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
         await EnsureSuccessAsync(response, c.Alias);
     }
 
-    protected override Task SendMarkdownInternalAsync(
+    protected override async Task SendMarkdownInternalAsync(
         ProviderConfigBase config,
         string markdownContent,
         NotificationService.NotifyLevel level)
     {
         // Discord原生支持Markdown
-        return SendInternalAsync(config, markdownContent, level);
+        var c = (DiscordConfig)config;
+        var payload = new
+        {
+            content = $"{Emoji(level)} {markdownContent}"
+        };
+
+        var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
+        var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
+        await EnsureSuccessAsync(response, c.Alias);
     }
 }

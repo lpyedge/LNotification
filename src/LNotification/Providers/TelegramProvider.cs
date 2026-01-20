@@ -33,7 +33,7 @@ public sealed class TelegramProvider : NotificationProviderBase
             text = $"{Emoji(level)} {message}"
         };
 
-        var client = HttpClientFactory.CreateClient(NotificationHttpClient.Name);
+        var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
         var response = await client.PostAsJsonAsync(url, payload);
         await EnsureSuccessAsync(response, c.Alias);
     }
@@ -53,7 +53,7 @@ public sealed class TelegramProvider : NotificationProviderBase
             parse_mode = "MarkdownV2"
         };
 
-        var client = HttpClientFactory.CreateClient(NotificationHttpClient.Name);
+        var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
         var response = await client.PostAsJsonAsync(url, payload);
         await EnsureSuccessAsync(response, c.Alias);
     }

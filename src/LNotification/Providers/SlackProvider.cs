@@ -30,7 +30,7 @@ public sealed class SlackProvider : NotificationProviderBase
             text = $"{Emoji(level)} {message}"
         };
 
-        var client = HttpClientFactory.CreateClient(NotificationHttpClient.Name);
+        var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
         var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
         await EnsureSuccessAsync(response, c.Alias);
     }
@@ -47,7 +47,7 @@ public sealed class SlackProvider : NotificationProviderBase
             mrkdwn = true
         };
 
-        var client = HttpClientFactory.CreateClient(NotificationHttpClient.Name);
+        var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
         var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
         await EnsureSuccessAsync(response, c.Alias);
     }
