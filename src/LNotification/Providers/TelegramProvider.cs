@@ -35,7 +35,7 @@ public sealed class TelegramProvider : NotificationProviderBase
 
         var client = HttpClientFactory.CreateClient(NotificationHttpClient.Name);
         var response = await client.PostAsJsonAsync(url, payload);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response, c.Alias);
     }
 
     protected override async Task SendMarkdownInternalAsync(
@@ -55,6 +55,6 @@ public sealed class TelegramProvider : NotificationProviderBase
 
         var client = HttpClientFactory.CreateClient(NotificationHttpClient.Name);
         var response = await client.PostAsJsonAsync(url, payload);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response, c.Alias);
     }
 }

@@ -43,7 +43,7 @@ public sealed class TeamsProvider : NotificationProviderBase
 
         var client = HttpClientFactory.CreateClient(NotificationHttpClient.Name);
         var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response, c.Alias);
     }
 
     protected override Task SendMarkdownInternalAsync(

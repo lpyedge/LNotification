@@ -61,11 +61,19 @@ internal static class NotificationOptionsBinder
     private static Type? FindConfigType(string providerKey)
     {
         // 规范化：移除"Provider"后缀
+#if NETSTANDARD2_0
+        var normalized = providerKey.Replace("Provider", "").Replace("Config", "");
+        
+        // 查找匹配的Config类型（例如：Slack → SlackConfig）
+        return ConfigTypes.FirstOrDefault(t =>
+            t.Name.Equals($"{normalized}Config", StringComparison.OrdinalIgnoreCase));
+#else
         var normalized = providerKey.Replace("Provider", "", StringComparison.OrdinalIgnoreCase)
             .Replace("Config", "", StringComparison.OrdinalIgnoreCase);
 
         // 查找匹配的Config类型（例如：Slack → SlackConfig）
         return ConfigTypes.FirstOrDefault(t =>
             t.Name.Equals($"{normalized}Config", StringComparison.OrdinalIgnoreCase));
+#endif
     }
 }

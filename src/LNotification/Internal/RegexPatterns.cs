@@ -6,7 +6,11 @@ using System.Text.RegularExpressions;
 
 namespace LNotification.Internal;
 
+#if NET7_0_OR_GREATER
 internal static partial class RegexPatterns
+#else
+internal static class RegexPatterns
+#endif
 {
     private static readonly char[] TelegramEscapeChars =
     {
@@ -14,6 +18,7 @@ internal static partial class RegexPatterns
         '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'
     };
 
+#if NET7_0_OR_GREATER
     [GeneratedRegex(@"```[\s\S]*?```", RegexOptions.Singleline)]
     private static partial Regex TgCodeBlockRegex();
 
@@ -37,6 +42,25 @@ internal static partial class RegexPatterns
 
     [GeneratedRegex(@"~[^~]+~")]
     private static partial Regex TgStrikeRegex();
+#else
+    private static readonly Regex _tgCodeBlockRegex = new(@"```[\s\S]*?```", RegexOptions.Singleline | RegexOptions.Compiled);
+    private static readonly Regex _tgInlineCodeRegex = new(@"`[^`]+`", RegexOptions.Compiled);
+    private static readonly Regex _tgLinkRegex = new(@"\[[^\]]+\]\([^)]+\)", RegexOptions.Compiled);
+    private static readonly Regex _tgBold1Regex = new(@"\*\*[^*]+\*\*", RegexOptions.Compiled);
+    private static readonly Regex _tgBold2Regex = new(@"__[^_]+__", RegexOptions.Compiled);
+    private static readonly Regex _tgItalic1Regex = new(@"\*[^*]+\*", RegexOptions.Compiled);
+    private static readonly Regex _tgItalic2Regex = new(@"_[^_]+_", RegexOptions.Compiled);
+    private static readonly Regex _tgStrikeRegex = new(@"~[^~]+~", RegexOptions.Compiled);
+
+    private static Regex TgCodeBlockRegex() => _tgCodeBlockRegex;
+    private static Regex TgInlineCodeRegex() => _tgInlineCodeRegex;
+    private static Regex TgLinkRegex() => _tgLinkRegex;
+    private static Regex TgBold1Regex() => _tgBold1Regex;
+    private static Regex TgBold2Regex() => _tgBold2Regex;
+    private static Regex TgItalic1Regex() => _tgItalic1Regex;
+    private static Regex TgItalic2Regex() => _tgItalic2Regex;
+    private static Regex TgStrikeRegex() => _tgStrikeRegex;
+#endif
 
     internal static string EscapeTelegramMarkdown(string input)
     {
@@ -136,6 +160,7 @@ internal static partial class RegexPatterns
         return html;
     }
 
+#if NET7_0_OR_GREATER
     [GeneratedRegex(@"```[\s\S]*?```", RegexOptions.Singleline)]
     private static partial Regex StripCodeBlockRegex();
 
@@ -198,4 +223,49 @@ internal static partial class RegexPatterns
 
     [GeneratedRegex(@"\[(.*?)\]\((.*?)\)")]
     private static partial Regex HtmlLinkRegex();
+#else
+    private static readonly Regex _stripCodeBlockRegex = new(@"```[\s\S]*?```", RegexOptions.Singleline | RegexOptions.Compiled);
+    private static readonly Regex _stripInlineCodeRegex = new(@"`([^`]*)`", RegexOptions.Compiled);
+    private static readonly Regex _stripBoldRegex1 = new(@"\*\*(.*?)\*\*", RegexOptions.Compiled);
+    private static readonly Regex _stripBoldRegex2 = new(@"__(.*?)__", RegexOptions.Compiled);
+    private static readonly Regex _stripItalicRegex1 = new(@"\*(.*?)\*", RegexOptions.Compiled);
+    private static readonly Regex _stripItalicRegex2 = new(@"_(.*?)_", RegexOptions.Compiled);
+    private static readonly Regex _stripHeaderRegex = new(@"^\s{0,3}#+\s*", RegexOptions.Multiline | RegexOptions.Compiled);
+    private static readonly Regex _stripLinkRegex = new(@"\[(.*?)\]\((.*?)\)", RegexOptions.Compiled);
+    private static readonly Regex _stripBlockquoteRegex = new(@"^\s{0,3}>\s?", RegexOptions.Multiline | RegexOptions.Compiled);
+    private static readonly Regex _stripUnorderedListRegex = new(@"^\s*[-+*]\s+", RegexOptions.Multiline | RegexOptions.Compiled);
+    private static readonly Regex _stripOrderedListRegex = new(@"^\s*\d+\.\s+", RegexOptions.Multiline | RegexOptions.Compiled);
+    private static readonly Regex _htmlCodeBlockRegex = new(@"```[\s\S]*?```", RegexOptions.Singleline | RegexOptions.Compiled);
+    private static readonly Regex _htmlInlineCodeRegex = new(@"`([^`]*)`", RegexOptions.Compiled);
+    private static readonly Regex _htmlBoldRegex1 = new(@"\*\*(.*?)\*\*", RegexOptions.Compiled);
+    private static readonly Regex _htmlBoldRegex2 = new(@"__(.*?)__", RegexOptions.Compiled);
+    private static readonly Regex _htmlItalicRegex1 = new(@"\*(.*?)\*", RegexOptions.Compiled);
+    private static readonly Regex _htmlItalicRegex2 = new(@"_(.*?)_", RegexOptions.Compiled);
+    private static readonly Regex _htmlHeader3Regex = new(@"^### (.*)$", RegexOptions.Multiline | RegexOptions.Compiled);
+    private static readonly Regex _htmlHeader2Regex = new(@"^## (.*)$", RegexOptions.Multiline | RegexOptions.Compiled);
+    private static readonly Regex _htmlHeader1Regex = new(@"^# (.*)$", RegexOptions.Multiline | RegexOptions.Compiled);
+    private static readonly Regex _htmlLinkRegex = new(@"\[(.*?)\]\((.*?)\)", RegexOptions.Compiled);
+
+    private static Regex StripCodeBlockRegex() => _stripCodeBlockRegex;
+    private static Regex StripInlineCodeRegex() => _stripInlineCodeRegex;
+    private static Regex StripBoldRegex1() => _stripBoldRegex1;
+    private static Regex StripBoldRegex2() => _stripBoldRegex2;
+    private static Regex StripItalicRegex1() => _stripItalicRegex1;
+    private static Regex StripItalicRegex2() => _stripItalicRegex2;
+    private static Regex StripHeaderRegex() => _stripHeaderRegex;
+    private static Regex StripLinkRegex() => _stripLinkRegex;
+    private static Regex StripBlockquoteRegex() => _stripBlockquoteRegex;
+    private static Regex StripUnorderedListRegex() => _stripUnorderedListRegex;
+    private static Regex StripOrderedListRegex() => _stripOrderedListRegex;
+    private static Regex HtmlCodeBlockRegex() => _htmlCodeBlockRegex;
+    private static Regex HtmlInlineCodeRegex() => _htmlInlineCodeRegex;
+    private static Regex HtmlBoldRegex1() => _htmlBoldRegex1;
+    private static Regex HtmlBoldRegex2() => _htmlBoldRegex2;
+    private static Regex HtmlItalicRegex1() => _htmlItalicRegex1;
+    private static Regex HtmlItalicRegex2() => _htmlItalicRegex2;
+    private static Regex HtmlHeader3Regex() => _htmlHeader3Regex;
+    private static Regex HtmlHeader2Regex() => _htmlHeader2Regex;
+    private static Regex HtmlHeader1Regex() => _htmlHeader1Regex;
+    private static Regex HtmlLinkRegex() => _htmlLinkRegex;
+#endif
 }

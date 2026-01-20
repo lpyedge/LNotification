@@ -13,6 +13,7 @@ dotnet add package LNotification
 
 ```csharp
 using LNotification;
+using LNotification.Providers;
 
 builder.Services.AddLNotification(builder.Configuration);
 ```
@@ -21,6 +22,7 @@ Or load from a dedicated JSON file (relative or absolute path, reloads on change
 
 ```csharp
 using LNotification;
+using LNotification.Providers;
 
 builder.Services.AddLNotification("lnotification.json");
 ```
@@ -40,12 +42,12 @@ await notifier.SendMarkdownAsync<DiscordProvider>("**Build OK**");
 
 Supported providers:
 
-- SlackProvider
-- TelegramProvider
-- DiscordProvider
-- TeamsProvider
-- FeishuProvider
-- EmailProvider
+- [SlackProvider](docs/providers/Slack.md)
+- [TelegramProvider](docs/providers/Telegram.md)
+- [DiscordProvider](docs/providers/Discord.md)
+- [TeamsProvider](docs/providers/Teams.md)
+- [FeishuProvider](docs/providers/Feishu.md)
+- [EmailProvider](docs/providers/Email.md)
 
 ## Configuration
 

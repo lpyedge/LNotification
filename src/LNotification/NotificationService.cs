@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using LNotification.Internal;
 
 namespace LNotification;
@@ -22,7 +25,10 @@ public sealed class NotificationService
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILoggerFactory _loggerFactory;
-    private readonly NotificationOptions _options;
+    private readonly NotificationConfiguration _configuration;
+    private readonly object _optionsLock = new();
+    private NotificationOptions _options;
+    private IChangeToken _reloadToken;
     private readonly ConcurrentDictionary<(Type, string), NotificationProviderBase> _providerCache = new();
 
     internal NotificationService(
@@ -32,7 +38,9 @@ public sealed class NotificationService
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _options = NotificationOptionsBinder.Bind(configuration.Configuration);
+        _reloadToken = configuration.Configuration.GetReloadToken();
     }
 
     public Task<bool> SendAsync<TProvider>(
@@ -58,6 +66,7 @@ public sealed class NotificationService
     private TProvider GetOrCreateProvider<TProvider>(string alias)
         where TProvider : NotificationProviderBase
     {
+        var options = GetOptions();
         var key = (typeof(TProvider), alias);
         
         if (_providerCache.TryGetValue(key, out var cachedProvider) && cachedProvider is TProvider typedProvider)
@@ -68,12 +77,34 @@ public sealed class NotificationService
         var logger = _loggerFactory.CreateLogger<TProvider>();
         var newProvider = (TProvider)Activator.CreateInstance(
             typeof(TProvider),
-            _httpClientFactory,
-            logger,
-            _options)!;
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            binder: null,
+            args: new object[] { _httpClientFactory, logger, options },
+            culture: null)!;
 
         _providerCache[key] = newProvider;
         return newProvider;
+    }
+
+    private NotificationOptions GetOptions()
+    {
+        if (!_reloadToken.HasChanged)
+        {
+            return _options;
+        }
+
+        lock (_optionsLock)
+        {
+            if (!_reloadToken.HasChanged)
+            {
+                return _options;
+            }
+
+            _options = NotificationOptionsBinder.Bind(_configuration.Configuration);
+            _reloadToken = _configuration.Configuration.GetReloadToken();
+            _providerCache.Clear();
+            return _options;
+        }
     }
 
     public static IServiceCollection AddLNotification(

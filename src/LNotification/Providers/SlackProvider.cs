@@ -32,7 +32,7 @@ public sealed class SlackProvider : NotificationProviderBase
 
         var client = HttpClientFactory.CreateClient(NotificationHttpClient.Name);
         var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response, c.Alias);
     }
 
     protected override async Task SendMarkdownInternalAsync(
@@ -49,6 +49,6 @@ public sealed class SlackProvider : NotificationProviderBase
 
         var client = HttpClientFactory.CreateClient(NotificationHttpClient.Name);
         var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response, c.Alias);
     }
 }

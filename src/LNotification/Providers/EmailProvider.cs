@@ -27,7 +27,6 @@ public sealed class EmailProvider : NotificationProviderBase
         public List<string>? Bcc { get; set; }
 
         public string SubjectPrefix { get; set; } = "[Notify]";
-        public bool IsHtml { get; set; } = false;
     }
 
     internal EmailProvider(
@@ -43,7 +42,7 @@ public sealed class EmailProvider : NotificationProviderBase
     {
         var c = (EmailConfig)config;
         var subject = $"{c.SubjectPrefix} [{level}]";
-        return SendEmailAsync(c, subject, message, c.IsHtml);
+        return SendEmailAsync(c, subject, message, isHtml: false);
     }
 
     protected override Task SendMarkdownInternalAsync(

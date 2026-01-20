@@ -152,6 +152,31 @@ public abstract class NotificationProviderBase
         return SendInternalAsync(config, plain, level);
     }
 
+    protected async Task EnsureSuccessAsync(HttpResponseMessage response, string? alias)
+    {
+        if (!response.IsSuccessStatusCode)
+        {
+            string? content = null;
+            try
+            {
+                content = await response.Content.ReadAsStringAsync();
+            }
+            catch
+            {
+                content = null;
+            }
+
+            Logger.LogError(
+                "{Provider}({Alias}) failed with status {StatusCode}. Response: {Content}",
+                GetType().Name,
+                string.IsNullOrWhiteSpace(alias) ? "default" : alias,
+                response.StatusCode,
+                string.IsNullOrWhiteSpace(content) ? "<empty>" : content);
+        }
+
+        response.EnsureSuccessStatusCode();
+    }
+
     private ProviderConfigBase? ResolveConfig(string? alias)
     {
         if (_configs.Count == 0)
