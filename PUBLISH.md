@@ -3,7 +3,7 @@
 ## Prerequisites
 
 1. **NuGet API key**: create one at https://www.nuget.org/account/apikeys
-2. **GitHub Actions secret**: add `NUGET_API_KEY` under Settings > Secrets and variables > Actions
+2. **GitHub Actions secret**: add `NUGET_API_KEY` under Settings > Secrets and variables > Actions > New repository secret
 
 ## Target frameworks
 
@@ -51,43 +51,54 @@ Edit `src/LNotification/LNotification.csproj`:
 ### 2. Build and test
 
 ```bash
+cd src/LNotification
 dotnet clean
-dotnet build src/LNotification/LNotification.csproj --configuration Release
-dotnet test
+dotnet build --configuration Release
+cd ../../tests/LNotification.Tests
+dotnet test --configuration Release
 ```
 
 ### 3. Pack
 
 ```bash
-dotnet pack src/LNotification/LNotification.csproj --configuration Release --output ./artifacts
+cd ../../src/LNotification
+dotnet pack --configuration Release --output ../../artifacts
 ```
 
 ### 4. Push to NuGet
 
 ```bash
-dotnet nuget push ./artifacts/LNotification.1.0.0.nupkg --api-key YOUR_API_KEY --source https://api.nuget.org/v3/index.json
+cd ../../
+dotnet nuget push ./artifacts/LNotification.*.nupkg --api-key YOUR_API_KEY --source https://api.nuget.org/v3/index.json
 ```
 
 ## Conditional compilation notes
 
 - `GeneratedRegex` is used only on .NET 7+; older targets use precompiled `Regex`.
 - `ImplicitUsings` is enabled on .NET 6+.
-- `System.Net.Http.Json` is referenced for .NET 5 and .NET Standard.
+- `System.Net.Http.Json` 8.0.1 is referenced for .NET 5 and .NET Standard (fixes security vulnerability).
 - `string.Replace(..., StringComparison)` is avoided on .NET Standard 2.0.
+
+## Security updates
+
+**v0.1.0**: Upgraded `System.Net.Http.Json` to 8.0.1 to fix HIGH severity vulnerability in `System.Text.Json 6.0.0` (GHSA-8g4q-xg66-9fp4).
 
 ## Troubleshooting
 
+- **GitHub Actions error: "does not contain a project or solution file"**
+  - Fixed: All dotnet commands now specify project paths explicitly.
 - **NuGet push fails: package already exists**
   - You cannot push the same version twice. Bump the version and retry.
 - **Build fails on a target framework**
   - Verify package versions and conditional compilation symbols.
 - **GitHub Actions fails**
   - Check that `NUGET_API_KEY` is valid and not expired.
+  - Verify the secret name is exactly `NUGET_API_KEY` (case-sensitive).
 
 ## Repository URLs
 
 Update the URLs in `src/LNotification/LNotification.csproj`:
 ```xml
-<RepositoryUrl>https://github.com/YOUR_USERNAME/LNotification</RepositoryUrl>
-<PackageProjectUrl>https://github.com/YOUR_USERNAME/LNotification</PackageProjectUrl>
+<RepositoryUrl>https://github.com/lpyedge/LNotification</RepositoryUrl>
+<PackageProjectUrl>https://github.com/lpyedge/LNotification</PackageProjectUrl>
 ```
