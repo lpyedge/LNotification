@@ -8,12 +8,12 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
 
     <PackageId>LNotification</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Authors>LNotification Contributors</Authors>
     <Description>Provider-based notification service with support for Slack, Telegram, Discord, Teams, Feishu, and Email.</Description>
     <PackageTags>notification;slack;telegram;discord;teams;feishu;email;webhook</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/lpyedge/LNotification</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/lpyedge/LNotification</PackageProjectUrl>

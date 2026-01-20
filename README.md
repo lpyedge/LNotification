@@ -75,3 +75,7 @@ Example snippet:
 
 You can select a specific provider configuration by passing the `alias` argument to
 `SendAsync` or `SendMarkdownAsync`.
+
+## License
+
+`LNotification` is released under the [GNU General Public License v3.0 or later](LICENSE).
