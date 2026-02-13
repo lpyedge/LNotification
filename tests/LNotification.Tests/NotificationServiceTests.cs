@@ -2,6 +2,7 @@
 using System.IO;
 using LNotification;
 using LNotification.Internal;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -35,5 +36,64 @@ public class NotificationServiceTests
                 Directory.Delete(tempDirectory, recursive: true);
             }
         }
+    }
+
+    [Fact]
+    public void AddLNotification_IConfiguration_RegistersServices()
+    {
+        var configData = new ConfigurationBuilder()
+            .AddInMemoryCollection(new[]
+            {
+                new System.Collections.Generic.KeyValuePair<string, string?>(
+                    "LNotification:TimeoutSeconds", "20")
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+
+        NotificationService.AddLNotification(services, configData);
+
+        using var provider = services.BuildServiceProvider();
+
+        // NotificationConfiguration should be registered
+        var notifConfig = provider.GetRequiredService<NotificationConfiguration>();
+        Assert.NotNull(notifConfig);
+        Assert.Equal("20", notifConfig.Configuration.GetSection("LNotification")["TimeoutSeconds"]);
+    }
+
+    [Fact]
+    public void AddLNotification_NullServices_ThrowsArgumentNullException()
+    {
+        var config = new ConfigurationBuilder().Build();
+
+        Assert.Throws<ArgumentNullException>(() =>
+            NotificationService.AddLNotification(null!, config));
+    }
+
+    [Fact]
+    public void AddLNotification_NullConfiguration_ThrowsArgumentNullException()
+    {
+        var services = new ServiceCollection();
+
+        Assert.Throws<ArgumentNullException>(() =>
+            NotificationService.AddLNotification(services, (IConfiguration)null!));
+    }
+
+    [Fact]
+    public void AddLNotification_EmptyJsonPath_ThrowsArgumentException()
+    {
+        var services = new ServiceCollection();
+
+        Assert.Throws<ArgumentException>(() =>
+            NotificationService.AddLNotification(services, ""));
+    }
+
+    [Fact]
+    public void AddLNotification_WhitespaceJsonPath_ThrowsArgumentException()
+    {
+        var services = new ServiceCollection();
+
+        Assert.Throws<ArgumentException>(() =>
+            NotificationService.AddLNotification(services, "   "));
     }
 }

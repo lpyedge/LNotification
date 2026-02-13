@@ -56,4 +56,72 @@ public class RetryPolicyTests
 
         Assert.Equal(options.MaxRetries + 1, attempts);
     }
+
+    [Fact]
+    public async Task RetryAsync_SucceedsFirstTime_NoRetry()
+    {
+        var options = new NotificationOptions
+        {
+            MaxRetries = 3,
+            RetryDelayMs = 0
+        };
+
+        var provider = new RetryTestProvider(options);
+        var attempts = 0;
+
+        await provider.ExecuteRetryAsync(() =>
+        {
+            attempts++;
+            return Task.CompletedTask;
+        });
+
+        Assert.Equal(1, attempts);
+    }
+
+    [Fact]
+    public async Task RetryAsync_SucceedsOnSecondAttempt_StopsRetrying()
+    {
+        var options = new NotificationOptions
+        {
+            MaxRetries = 3,
+            RetryDelayMs = 0
+        };
+
+        var provider = new RetryTestProvider(options);
+        var attempts = 0;
+
+        await provider.ExecuteRetryAsync(() =>
+        {
+            attempts++;
+            if (attempts < 2)
+            {
+                return Task.FromException(new InvalidOperationException("transient"));
+            }
+            return Task.CompletedTask;
+        });
+
+        Assert.Equal(2, attempts);
+    }
+
+    [Fact]
+    public async Task RetryAsync_ZeroMaxRetries_OnlyOneAttempt()
+    {
+        var options = new NotificationOptions
+        {
+            MaxRetries = 0,
+            RetryDelayMs = 0
+        };
+
+        var provider = new RetryTestProvider(options);
+        var attempts = 0;
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.ExecuteRetryAsync(() =>
+            {
+                attempts++;
+                return Task.FromException(new InvalidOperationException("fail"));
+            }));
+
+        Assert.Equal(1, attempts);
+    }
 }
