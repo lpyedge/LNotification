@@ -191,6 +191,7 @@ ModelManifest.xml
 .vs
 .vscode
 
+.ai/
 .DS_Store
 .idea/
 /temp

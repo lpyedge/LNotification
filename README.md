@@ -15,7 +15,7 @@ dotnet add package LNotification
 using LNotification;
 using LNotification.Providers;
 
-builder.Services.AddLNotification(builder.Configuration);
+NotificationService.AddLNotification(builder.Services, builder.Configuration);
 ```
 
 Or load from a dedicated JSON file (relative or absolute path, reloads on change):
@@ -24,7 +24,7 @@ Or load from a dedicated JSON file (relative or absolute path, reloads on change
 using LNotification;
 using LNotification.Providers;
 
-builder.Services.AddLNotification("lnotification.json");
+NotificationService.AddLNotification(builder.Services, "lnotification.json");
 ```
 
 The JSON file should include a top-level `LNotification` section.
@@ -48,6 +48,14 @@ Supported providers:
 - [TeamsProvider](docs/providers/Teams.md)
 - [FeishuProvider](docs/providers/Feishu.md)
 - [EmailProvider](docs/providers/Email.md)
+- [WebhookProvider](docs/providers/Webhook.md)
+- [NtfyProvider](docs/providers/Ntfy.md)
+- [GotifyProvider](docs/providers/Gotify.md)
+- [PushoverProvider](docs/providers/Pushover.md)
+- [LineProvider](docs/providers/Line.md)
+- [MattermostProvider](docs/providers/Mattermost.md)
+- [GoogleChatProvider](docs/providers/GoogleChat.md)
+- [MsGraphEmailProvider](docs/providers/MsGraphEmail.md)
 
 ## Configuration
 

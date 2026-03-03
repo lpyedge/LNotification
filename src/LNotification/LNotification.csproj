@@ -8,10 +8,10 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
 
     <PackageId>LNotification</PackageId>
-    <Version>0.1.2</Version>
+    <Version>0.3.0</Version>
     <Authors>LNotification Contributors</Authors>
-    <Description>Provider-based notification service with support for Slack, Telegram, Discord, Teams, Feishu, and Email.</Description>
-    <PackageTags>notification;slack;telegram;discord;teams;feishu;email;webhook</PackageTags>
+    <Description>Provider-based notification service with support for Slack, Telegram, Discord, Teams, Feishu, Email, Webhook, Ntfy, Gotify, Pushover, LINE, Mattermost, Google Chat, and Microsoft Graph Email.</Description>
+    <PackageTags>notification;slack;telegram;discord;teams;feishu;email;webhook;ntfy;gotify;pushover;line;mattermost;googlechat;msgraph</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/lpyedge/LNotification</RepositoryUrl>

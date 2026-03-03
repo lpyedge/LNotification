@@ -41,7 +41,7 @@ provider's official documentation for exact values.
   "To": ["ops@example.com"],
   "Cc": ["dev@example.com"],
   "Bcc": ["audit@example.com"],
-  "SubjectPrefix": "[Notify]",
+  "SubjectPrefix": "[Notify]"
 }
 ```
 
