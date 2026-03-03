@@ -38,17 +38,19 @@ Use `TelegramSendOptions` to customize individual messages:
 
 | Property | Type | Default | Description |
 |---|---|---|---|
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` |
 | MessageThreadId | `int?` | null | Forum topic ID for supergroups |
 | DisableNotification | `bool` | false | Send silently (no sound) |
 | ProtectContent | `bool` | false | Prevent forwarding/saving |
 | ParseMode | `TelegramParseMode` | None | `None` / `MarkdownV2` / `Html` |
 
 ```csharp
-await service.SendAsync<TelegramProvider>("msg",
-    options: new TelegramProvider.TelegramSendOptions
+await service.SendAsync<TelegramProvider, TelegramProvider.TelegramSendOptions>(
+    "msg",
+    new TelegramProvider.TelegramSendOptions
     {
         MessageThreadId = 42,
-        ParseMode = TelegramParseMode.MarkdownV2
+        ContentFormat = MessageContentFormat.Markdown
     });
 ```
 

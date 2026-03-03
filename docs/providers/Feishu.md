@@ -25,6 +25,14 @@ signing the request. Keep signature verification disabled or add signing support
 }
 ```
 
+## SendOptions
+
+Use `FeishuSendOptions` to customize individual messages:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (Markdown is stripped to plain text) |
+
 ## References
 
 - https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot

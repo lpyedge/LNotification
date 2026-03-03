@@ -1,3 +1,4 @@
+using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -15,7 +16,7 @@ public enum GoogleChatReplyOption
     ForceNewThread
 }
 
-public sealed class GoogleChatProvider : NotificationProviderBase
+public sealed class GoogleChatProvider : NotificationProviderBase<GoogleChatProvider.GoogleChatConfig, GoogleChatProvider.GoogleChatSendOptions>
 {
     /// <summary>
     /// Per-message options for Google Chat webhook notifications.
@@ -29,9 +30,10 @@ public sealed class GoogleChatProvider : NotificationProviderBase
         public GoogleChatReplyOption ReplyOption { get; set; } = GoogleChatReplyOption.FallbackToNewThread;
     }
 
-    public sealed class GoogleChatConfig : ProviderConfigBase
+    public sealed class GoogleChatConfig : ProviderConfigBase, IProviderSendOptions<GoogleChatSendOptions>
     {
         public string WebhookUrl { get; set; } = string.Empty;
+        public GoogleChatSendOptions SendOptions { get; set; } = new();
     }
 
     internal GoogleChatProvider(
@@ -41,23 +43,20 @@ public sealed class GoogleChatProvider : NotificationProviderBase
         : base(factory, logger, options) { }
 
     protected override async Task SendInternalAsync(
-        ProviderConfigBase config,
+        GoogleChatConfig config,
         string message,
         NotificationService.NotifyLevel level,
-        SendOptions? options = null)
+        GoogleChatSendOptions options)
     {
-        var c = (GoogleChatConfig)config;
-        var o = options as GoogleChatSendOptions;
-
         var payload = new
         {
             text = $"{Emoji(level)} {message}"
         };
 
-        var url = BuildUrl(c.WebhookUrl, o);
+        var url = BuildUrl(config.WebhookUrl, options);
         var client = HttpClientFactory.CreateClient(NotificationHttpClient);
         var response = await client.PostAsJsonAsync(url, payload);
-        await EnsureSuccessAsync(response, c.Alias);
+        await EnsureSuccessAsync(response, config.Alias);
     }
 
     private static string BuildUrl(string webhookUrl, GoogleChatSendOptions? o)
@@ -72,6 +71,6 @@ public sealed class GoogleChatProvider : NotificationProviderBase
             ? "REPLY_MESSAGE_OR_FAIL"
             : "REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD";
 
-        return $"{webhookUrl}{separator}threadKey={o.ThreadKey}&messageReplyOption={replyOption}";
+        return $"{webhookUrl}{separator}threadKey={Uri.EscapeDataString(o.ThreadKey)}&messageReplyOption={replyOption}";
     }
 }

@@ -6,11 +6,16 @@ using LNotification.Internal;
 
 namespace LNotification.Providers;
 
-public sealed class FeishuProvider : NotificationProviderBase
+public sealed class FeishuProvider : NotificationProviderBase<FeishuProvider.FeishuConfig, FeishuProvider.FeishuSendOptions>
 {
-    public sealed class FeishuConfig : ProviderConfigBase
+    public sealed class FeishuSendOptions : SendOptions
+    {
+    }
+
+    public sealed class FeishuConfig : ProviderConfigBase, IProviderSendOptions<FeishuSendOptions>
     {
         public string WebhookUrl { get; set; } = string.Empty;
+        public FeishuSendOptions SendOptions { get; set; } = new();
     }
 
     internal FeishuProvider(
@@ -20,33 +25,26 @@ public sealed class FeishuProvider : NotificationProviderBase
         : base(factory, logger, options) { }
 
     protected override async Task SendInternalAsync(
-        ProviderConfigBase config,
+        FeishuConfig config,
         string message,
         NotificationService.NotifyLevel level,
-        SendOptions? options = null)
+        FeishuSendOptions options)
     {
-        var c = (FeishuConfig)config;
+        var text = options.ContentFormat == MessageContentFormat.Markdown
+            ? RegexPatterns.StripMarkdown(message)
+            : message;
+
         var payload = new
         {
             msg_type = "text",
             content = new
             {
-                text = $"{Emoji(level)} {message}"
+                text = $"{Emoji(level)} {text}"
             }
         };
 
         var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
-        await EnsureSuccessAsync(response, c.Alias);
-    }
-
-    protected override Task SendMarkdownInternalAsync(
-        ProviderConfigBase config,
-        string markdownContent,
-        NotificationService.NotifyLevel level,
-        SendOptions? options = null)
-    {
-        var plain = RegexPatterns.StripMarkdown(markdownContent);
-        return SendInternalAsync(config, plain, level, options);
+        var response = await client.PostAsJsonAsync(config.WebhookUrl, payload);
+        await EnsureSuccessAsync(response, config.Alias);
     }
 }

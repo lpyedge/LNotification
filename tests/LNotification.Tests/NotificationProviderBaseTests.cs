@@ -1,5 +1,7 @@
-using System.Collections.Generic;
+using System;
+using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using LNotification.Internal;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -14,25 +16,33 @@ public class NotificationProviderBaseTests
         public HttpClient CreateClient(string name) => new();
     }
 
-    private sealed class StubConfig : ProviderConfigBase { }
+    private sealed class StubSendOptions : SendOptions { }
+    private sealed class OtherSendOptions : SendOptions { }
+
+    private sealed class StubConfig : ProviderConfigBase, IProviderSendOptions<StubSendOptions>
+    {
+        public StubSendOptions SendOptions { get; set; } = new();
+    }
 
     /// <summary>
     /// A test provider whose type name is "StubProvider" so it looks for "StubConfig" automatically.
     /// </summary>
-    private sealed class StubProvider : NotificationProviderBase
+    private sealed class StubProvider : NotificationProviderBase<StubConfig, StubSendOptions>
     {
         internal bool SendCalled { get; private set; }
+        internal StubSendOptions? LastOptions { get; private set; }
 
         internal StubProvider(NotificationOptions options)
             : base(new TestHttpClientFactory(), NullLogger.Instance, options) { }
 
         protected override Task SendInternalAsync(
-            ProviderConfigBase config,
+            StubConfig config,
             string message,
             NotificationService.NotifyLevel level,
-            SendOptions? options = null)
+            StubSendOptions options)
         {
             SendCalled = true;
+            LastOptions = options;
             return Task.CompletedTask;
         }
     }
@@ -135,18 +145,97 @@ public class NotificationProviderBaseTests
     }
 
     [Fact]
-    public async Task SendMarkdownAsync_NoConfigs_ReturnsFalse()
+    public async Task SendAsync_NoOptions_UsesConfigDefaultSendOptions()
     {
+        var defaultOptions = new StubSendOptions
+        {
+            ContentFormat = MessageContentFormat.Markdown
+        };
+        var config = new StubConfig { Alias = "default", Enabled = true, SendOptions = defaultOptions };
         var options = new NotificationOptions
         {
             MaxRetries = 0,
             RetryDelayMs = 0
         };
+        options.Providers.Add(config);
 
         var provider = new StubProvider(options);
 
-        var result = await provider.SendMarkdownAsync("**bold**", NotificationService.NotifyLevel.Info, null);
+        var result = await provider.SendAsync("test", NotificationService.NotifyLevel.Info, null);
 
-        Assert.False(result);
+        Assert.True(result);
+        Assert.Same(defaultOptions, provider.LastOptions);
     }
+
+    [Fact]
+    public async Task SendAsync_DefaultSendOptions_ContentFormatIsPlainText()
+    {
+        var config = new StubConfig { Alias = "default", Enabled = true };
+        var options = new NotificationOptions
+        {
+            MaxRetries = 0,
+            RetryDelayMs = 0
+        };
+        options.Providers.Add(config);
+
+        var provider = new StubProvider(options);
+
+        var result = await provider.SendAsync("test", NotificationService.NotifyLevel.Info, null);
+
+        Assert.True(result);
+        Assert.NotNull(provider.LastOptions);
+        Assert.Equal(MessageContentFormat.PlainText, provider.LastOptions!.ContentFormat);
+    }
+
+    [Fact]
+    public async Task SendAsync_WrongSendOptionsType_ThrowsArgumentException()
+    {
+        var config = new StubConfig { Alias = "default", Enabled = true };
+        var options = new NotificationOptions
+        {
+            MaxRetries = 0,
+            RetryDelayMs = 0
+        };
+        options.Providers.Add(config);
+
+        var provider = new StubProvider(options);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            provider.SendAsync("test", NotificationService.NotifyLevel.Info, null, new OtherSendOptions()));
+    }
+
+    [Fact]
+    public async Task SendAsync_WithTypedOptions_UsesProvidedMarkdownContentFormat()
+    {
+        var config = new StubConfig { Alias = "default", Enabled = true };
+        var options = new NotificationOptions
+        {
+            MaxRetries = 0,
+            RetryDelayMs = 0
+        };
+        options.Providers.Add(config);
+
+        var provider = new StubProvider(options);
+        var requestOptions = new StubSendOptions
+        {
+            ContentFormat = MessageContentFormat.Markdown
+        };
+
+        var result = await provider.SendAsync("**markdown**", NotificationService.NotifyLevel.Info, null, requestOptions);
+
+        Assert.True(result);
+        Assert.Same(requestOptions, provider.LastOptions);
+        Assert.Equal(MessageContentFormat.Markdown, provider.LastOptions!.ContentFormat);
+    }
+
+    [Fact]
+    public void NotificationProviderBase_NonPublicApi_DoesNotContainSendMarkdownInternalAsync()
+    {
+        var hasLegacyMethod = typeof(NotificationProviderBase)
+            .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Any(m => m.Name == "SendMarkdownInternalAsync");
+
+        Assert.False(hasLegacyMethod);
+    }
+
 }

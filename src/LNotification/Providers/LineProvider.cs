@@ -6,14 +6,19 @@ using LNotification.Internal;
 
 namespace LNotification.Providers;
 
-public sealed class LineProvider : NotificationProviderBase
+public sealed class LineProvider : NotificationProviderBase<LineProvider.LineConfig, LineProvider.LineSendOptions>
 {
     private const string LinePushApiUrl = "https://api.line.me/v2/bot/message/push";
 
-    public sealed class LineConfig : ProviderConfigBase
+    public sealed class LineSendOptions : SendOptions
+    {
+    }
+
+    public sealed class LineConfig : ProviderConfigBase, IProviderSendOptions<LineSendOptions>
     {
         public string ChannelAccessToken { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
+        public LineSendOptions SendOptions { get; set; } = new();
     }
 
     internal LineProvider(
@@ -23,21 +28,23 @@ public sealed class LineProvider : NotificationProviderBase
         : base(factory, logger, options) { }
 
     protected override async Task SendInternalAsync(
-        ProviderConfigBase config,
+        LineConfig config,
         string message,
         NotificationService.NotifyLevel level,
-        SendOptions? options = null)
+        LineSendOptions options)
     {
-        var c = (LineConfig)config;
+        var text = options.ContentFormat == MessageContentFormat.Markdown
+            ? RegexPatterns.StripMarkdown(message)
+            : message;
         var payload = new
         {
-            to = c.UserId,
+            to = config.UserId,
             messages = new[]
             {
                 new
                 {
                     type = "text",
-                    text = $"{Emoji(level)} {message}"
+                    text = $"{Emoji(level)} {text}"
                 }
             }
         };
@@ -47,9 +54,9 @@ public sealed class LineProvider : NotificationProviderBase
         {
             Content = JsonContent.Create(payload)
         };
-        request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {c.ChannelAccessToken}");
+        request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {config.ChannelAccessToken}");
 
         var response = await client.SendAsync(request);
-        await EnsureSuccessAsync(response, c.Alias);
+        await EnsureSuccessAsync(response, config.Alias);
     }
 }

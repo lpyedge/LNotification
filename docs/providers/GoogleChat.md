@@ -30,6 +30,7 @@ Use `GoogleChatSendOptions` to customize individual messages:
 
 | Property | Type | Default | Description |
 |---|---|---|---|
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (message text is sent as-is) |
 | ThreadKey | `string?` | null | Thread key for grouping messages |
 | ReplyOption | `GoogleChatReplyOption` | FallbackToNewThread | `FallbackToNewThread` / `ForceNewThread` |
 

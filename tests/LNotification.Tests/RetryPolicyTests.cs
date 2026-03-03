@@ -14,18 +14,23 @@ public class RetryPolicyTests
         public HttpClient CreateClient(string name) => new();
     }
 
-    private sealed class RetryTestProvider : NotificationProviderBase
+    private sealed class RetrySendOptions : SendOptions { }
+
+    private sealed class RetryTestProvider : NotificationProviderBase<RetryTestProvider.RetryConfig, RetrySendOptions>
     {
-        internal sealed class RetryConfig : ProviderConfigBase { }
+        internal sealed class RetryConfig : ProviderConfigBase, IProviderSendOptions<RetrySendOptions>
+        {
+            public RetrySendOptions SendOptions { get; set; } = new();
+        }
 
         internal RetryTestProvider(NotificationOptions options)
             : base(new TestHttpClientFactory(), NullLogger.Instance, options) { }
 
         protected override Task SendInternalAsync(
-            ProviderConfigBase config,
+            RetryConfig config,
             string message,
             NotificationService.NotifyLevel level,
-            SendOptions? options = null)
+            RetrySendOptions options)
         {
             return Task.CompletedTask;
         }

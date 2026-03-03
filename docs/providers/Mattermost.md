@@ -38,6 +38,7 @@ Use `MattermostSendOptions` to customize individual messages:
 
 | Property | Type | Default | Description |
 |---|---|---|---|
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` |
 | Username | `string?` | null | Override bot display name |
 | IconUrl | `string?` | null | Override bot avatar URL |
 | Channel | `string?` | null | Override target channel |

@@ -31,6 +31,7 @@ Use `TeamsSendOptions` to customize individual messages:
 
 | Property | Type | Default | Description |
 |---|---|---|---|
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (Markdown is stripped to plain text for Teams cards) |
 | Title | `string?` | null | Custom message card title |
 
 ## References

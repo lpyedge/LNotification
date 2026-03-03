@@ -50,4 +50,5 @@ Use `WebhookSendOptions` to customize individual messages:
 
 | Property | Type | Default | Description |
 |---|---|---|---|
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (affects default payload text when no `BodyTemplate`) |
 | ContentType | `WebhookContentType` | Json | `Json` / `Xml` / `FormUrlEncoded` / `PlainText` |

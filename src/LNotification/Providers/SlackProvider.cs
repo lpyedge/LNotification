@@ -6,7 +6,7 @@ using LNotification.Internal;
 
 namespace LNotification.Providers;
 
-public sealed class SlackProvider : NotificationProviderBase
+public sealed class SlackProvider : NotificationProviderBase<SlackProvider.SlackConfig, SlackProvider.SlackSendOptions>
 {
     /// <summary>
     /// Per-message options for Slack webhook notifications.
@@ -23,9 +23,10 @@ public sealed class SlackProvider : NotificationProviderBase
         public string? IconEmoji { get; set; }
     }
 
-    public sealed class SlackConfig : ProviderConfigBase
+    public sealed class SlackConfig : ProviderConfigBase, IProviderSendOptions<SlackSendOptions>
     {
         public string WebhookUrl { get; set; } = string.Empty;
+        public SlackSendOptions SendOptions { get; set; } = new();
     }
 
     internal SlackProvider(
@@ -35,47 +36,22 @@ public sealed class SlackProvider : NotificationProviderBase
         : base(factory, logger, options) { }
 
     protected override async Task SendInternalAsync(
-        ProviderConfigBase config,
+        SlackConfig config,
         string message,
         NotificationService.NotifyLevel level,
-        SendOptions? options = null)
+        SlackSendOptions options)
     {
-        var c = (SlackConfig)config;
-        var o = options as SlackSendOptions;
-
         var payload = new
         {
             text = $"{Emoji(level)} {message}",
-            channel = o?.Channel,
-            username = o?.Username,
-            icon_emoji = o?.IconEmoji
+            mrkdwn = options.ContentFormat == MessageContentFormat.Markdown,
+            channel = options.Channel,
+            username = options.Username,
+            icon_emoji = options.IconEmoji
         };
 
         var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
-        await EnsureSuccessAsync(response, c.Alias);
-    }
-
-    protected override async Task SendMarkdownInternalAsync(
-        ProviderConfigBase config,
-        string markdownContent,
-        NotificationService.NotifyLevel level,
-        SendOptions? options = null)
-    {
-        var c = (SlackConfig)config;
-        var o = options as SlackSendOptions;
-
-        var payload = new
-        {
-            text = $"{Emoji(level)} {markdownContent}",
-            mrkdwn = true,
-            channel = o?.Channel,
-            username = o?.Username,
-            icon_emoji = o?.IconEmoji
-        };
-
-        var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
-        await EnsureSuccessAsync(response, c.Alias);
+        var response = await client.PostAsJsonAsync(config.WebhookUrl, payload);
+        await EnsureSuccessAsync(response, config.Alias);
     }
 }

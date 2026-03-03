@@ -18,7 +18,7 @@ public enum EmailBodyFormat
     Html
 }
 
-public sealed class EmailProvider : NotificationProviderBase
+public sealed class EmailProvider : NotificationProviderBase<EmailProvider.EmailConfig, EmailProvider.EmailSendOptions>
 {
     /// <summary>
     /// Per-message options for SMTP email notifications.
@@ -31,12 +31,11 @@ public sealed class EmailProvider : NotificationProviderBase
         /// <summary>Reply-To email address.</summary>
         public string? ReplyTo { get; set; }
 
-        /// <summary>Body format for SendAsync. Default: PlainText.
-        /// SendMarkdownAsync always converts to HTML regardless of this setting.</summary>
+        /// <summary>Body format for plain text content. Ignored when ContentFormat is Markdown.</summary>
         public EmailBodyFormat BodyFormat { get; set; } = EmailBodyFormat.PlainText;
     }
 
-    public sealed class EmailConfig : ProviderConfigBase
+    public sealed class EmailConfig : ProviderConfigBase, IProviderSendOptions<EmailSendOptions>
     {
         public string SmtpHost { get; set; } = string.Empty;
         public int SmtpPort { get; set; } = 25;
@@ -53,6 +52,8 @@ public sealed class EmailProvider : NotificationProviderBase
         public List<string>? Bcc { get; set; }
 
         public string SubjectPrefix { get; set; } = "[Notify]";
+
+        public EmailSendOptions SendOptions { get; set; } = new();
     }
 
     internal EmailProvider(
@@ -62,29 +63,21 @@ public sealed class EmailProvider : NotificationProviderBase
         : base(factory, logger, options) { }
 
     protected override Task SendInternalAsync(
-        ProviderConfigBase config,
+        EmailConfig config,
         string message,
         NotificationService.NotifyLevel level,
-        SendOptions? options = null)
+        EmailSendOptions options)
     {
-        var c = (EmailConfig)config;
-        var o = options as EmailSendOptions;
-        var subject = o?.Subject ?? $"{c.SubjectPrefix} [{level}]";
-        var isHtml = o?.BodyFormat == EmailBodyFormat.Html;
-        return SendEmailAsync(c, subject, message, isHtml, o?.ReplyTo);
-    }
+        var subject = options.Subject ?? $"{config.SubjectPrefix} [{level}]";
 
-    protected override Task SendMarkdownInternalAsync(
-        ProviderConfigBase config,
-        string markdownContent,
-        NotificationService.NotifyLevel level,
-        SendOptions? options = null)
-    {
-        var c = (EmailConfig)config;
-        var o = options as EmailSendOptions;
-        var subject = o?.Subject ?? $"{c.SubjectPrefix} [{level}]";
-        var htmlBody = RegexPatterns.MarkdownToHtml(markdownContent);
-        return SendEmailAsync(c, subject, htmlBody, isHtml: true, o?.ReplyTo);
+        if (options.ContentFormat == MessageContentFormat.Markdown)
+        {
+            var htmlBody = RegexPatterns.MarkdownToHtml(message);
+            return SendEmailAsync(config, subject, htmlBody, isHtml: true, options.ReplyTo);
+        }
+
+        var isHtml = options.BodyFormat == EmailBodyFormat.Html;
+        return SendEmailAsync(config, subject, message, isHtml, options.ReplyTo);
     }
 
     private async Task SendEmailAsync(

@@ -87,7 +87,7 @@ public enum PushoverMessageFormat
     Monospace
 }
 
-public sealed class PushoverProvider : NotificationProviderBase
+public sealed class PushoverProvider : NotificationProviderBase<PushoverProvider.PushoverConfig, PushoverProvider.PushoverSendOptions>
 {
     private const string PushoverApiUrl = "https://api.pushover.net/1/messages.json";
 
@@ -118,12 +118,13 @@ public sealed class PushoverProvider : NotificationProviderBase
         public int? Ttl { get; set; }
     }
 
-    public sealed class PushoverConfig : ProviderConfigBase
+    public sealed class PushoverConfig : ProviderConfigBase, IProviderSendOptions<PushoverSendOptions>
     {
         public string ApplicationToken { get; set; } = string.Empty;
         public string UserKey { get; set; } = string.Empty;
         public int Priority { get; set; } = 0;
         public string? Sound { get; set; }
+        public PushoverSendOptions SendOptions { get; set; } = new();
     }
 
     internal PushoverProvider(
@@ -133,51 +134,38 @@ public sealed class PushoverProvider : NotificationProviderBase
         : base(factory, logger, options) { }
 
     protected override async Task SendInternalAsync(
-        ProviderConfigBase config,
+        PushoverConfig config,
         string message,
         NotificationService.NotifyLevel level,
-        SendOptions? options = null)
+        PushoverSendOptions options)
     {
-        var c = (PushoverConfig)config;
-        var o = options as PushoverSendOptions;
+        var payload = options.ContentFormat == MessageContentFormat.Markdown
+            ? BuildPayload(config, RegexPatterns.MarkdownToHtml(message), level, options)
+            : BuildPayload(config, message, level, options);
 
-        var payload = BuildPayload(c, message, level, o);
-        ApplyFormat(payload, o);
+        if (options.ContentFormat == MessageContentFormat.Markdown)
+        {
+            payload["html"] = "1";
+        }
+        else
+        {
+            ApplyFormat(payload, options);
+        }
 
         var client = HttpClientFactory.CreateClient(NotificationHttpClient);
         var response = await client.PostAsync(
             PushoverApiUrl,
             new FormUrlEncodedContent(payload.Select(kv => new KeyValuePair<string?, string?>(kv.Key, kv.Value))));
-        await EnsureSuccessAsync(response, c.Alias);
-    }
-
-    protected override async Task SendMarkdownInternalAsync(
-        ProviderConfigBase config,
-        string markdownContent,
-        NotificationService.NotifyLevel level,
-        SendOptions? options = null)
-    {
-        var c = (PushoverConfig)config;
-        var o = options as PushoverSendOptions;
-
-        var htmlBody = RegexPatterns.MarkdownToHtml(markdownContent);
-        var payload = BuildPayload(c, htmlBody, level, o);
-        payload["html"] = "1";
-
-        var client = HttpClientFactory.CreateClient(NotificationHttpClient);
-        var response = await client.PostAsync(
-            PushoverApiUrl,
-            new FormUrlEncodedContent(payload.Select(kv => new KeyValuePair<string?, string?>(kv.Key, kv.Value))));
-        await EnsureSuccessAsync(response, c.Alias);
+        await EnsureSuccessAsync(response, config.Alias);
     }
 
     private static Dictionary<string, string> BuildPayload(
         PushoverConfig c,
         string message,
         NotificationService.NotifyLevel level,
-        PushoverSendOptions? o)
+        PushoverSendOptions o)
     {
-        var priority = o?.Priority != null ? (int)o.Priority : c.Priority;
+        var priority = o.Priority != null ? (int)o.Priority : c.Priority;
         var payload = new Dictionary<string, string>
         {
             ["token"] = c.ApplicationToken,
@@ -188,22 +176,22 @@ public sealed class PushoverProvider : NotificationProviderBase
         };
 
         // Sound
-        var soundStr = ResolveSoundString(o?.Sound ?? PushoverSound.Default, c.Sound);
+        var soundStr = ResolveSoundString(o.Sound, c.Sound);
         if (soundStr != null)
         {
             payload["sound"] = soundStr;
         }
 
-        if (!string.IsNullOrWhiteSpace(o?.Device))
-            payload["device"] = o!.Device!;
+        if (!string.IsNullOrWhiteSpace(o.Device))
+            payload["device"] = o.Device!;
 
-        if (!string.IsNullOrWhiteSpace(o?.Url))
-            payload["url"] = o!.Url!;
+        if (!string.IsNullOrWhiteSpace(o.Url))
+            payload["url"] = o.Url!;
 
-        if (!string.IsNullOrWhiteSpace(o?.UrlTitle))
-            payload["url_title"] = o!.UrlTitle!;
+        if (!string.IsNullOrWhiteSpace(o.UrlTitle))
+            payload["url_title"] = o.UrlTitle!;
 
-        if (o?.Ttl != null)
+        if (o.Ttl != null)
             payload["ttl"] = o.Ttl.Value.ToString();
 
         return payload;

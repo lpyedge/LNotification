@@ -33,11 +33,18 @@ The JSON file should include a top-level `LNotification` section.
 
 ```csharp
 using LNotification;
+using LNotification.Internal;
 
 var notifier = app.Services.GetRequiredService<NotificationService>();
 
 await notifier.SendAsync<SlackProvider>("Hello", NotificationService.NotifyLevel.Info);
-await notifier.SendMarkdownAsync<DiscordProvider>("**Build OK**");
+await notifier.SendAsync<DiscordProvider, DiscordProvider.DiscordSendOptions>(
+    "**Build OK**",
+    new DiscordProvider.DiscordSendOptions
+    {
+        ContentFormat = MessageContentFormat.Markdown,
+        Username = "Build Bot"
+    });
 ```
 
 Supported providers:
@@ -82,7 +89,10 @@ Example snippet:
 ```
 
 You can select a specific provider configuration by passing the `alias` argument to
-`SendAsync` or `SendMarkdownAsync`.
+`SendAsync`.
+
+By default, `SendOptions.ContentFormat` is `PlainText` for all providers. Set it to
+`Markdown` only when you need provider-specific markdown rendering.
 
 ## License
 

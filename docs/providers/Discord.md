@@ -31,14 +31,17 @@ Use `DiscordSendOptions` to customize individual messages:
 
 | Property | Type | Default | Description |
 |---|---|---|---|
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` |
 | Username | `string?` | null | Override bot display name |
 | AvatarUrl | `string?` | null | Override bot avatar URL |
 | Flags | `DiscordMessageFlag` | None | `SuppressEmbeds` / `SuppressNotifications` |
 
 ```csharp
-await service.SendAsync<DiscordProvider>("msg",
-    options: new DiscordProvider.DiscordSendOptions
+await service.SendAsync<DiscordProvider, DiscordProvider.DiscordSendOptions>(
+    "msg",
+    new DiscordProvider.DiscordSendOptions
     {
+        ContentFormat = MessageContentFormat.Markdown,
         Username = "Alert Bot",
         Flags = DiscordMessageFlag.SuppressNotifications
     });

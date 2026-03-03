@@ -55,6 +55,7 @@ Use `MsGraphEmailSendOptions` to customize individual messages:
 
 | Property | Type | Default | Description |
 |---|---|---|---|
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (Markdown is converted to HTML) |
 | Subject | `string?` | null | Override email subject |
 | ReplyTo | `string?` | null | Reply-To address |
 | Importance | `EmailImportance` | Normal | `Low` / `Normal` / `High` |

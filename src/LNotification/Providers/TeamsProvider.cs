@@ -6,7 +6,7 @@ using LNotification.Internal;
 
 namespace LNotification.Providers;
 
-public sealed class TeamsProvider : NotificationProviderBase
+public sealed class TeamsProvider : NotificationProviderBase<TeamsProvider.TeamsConfig, TeamsProvider.TeamsSendOptions>
 {
     /// <summary>
     /// Per-message options for Microsoft Teams webhook notifications.
@@ -17,9 +17,10 @@ public sealed class TeamsProvider : NotificationProviderBase
         public string? Title { get; set; }
     }
 
-    public sealed class TeamsConfig : ProviderConfigBase
+    public sealed class TeamsConfig : ProviderConfigBase, IProviderSendOptions<TeamsSendOptions>
     {
         public string WebhookUrl { get; set; } = string.Empty;
+        public TeamsSendOptions SendOptions { get; set; } = new();
     }
 
     internal TeamsProvider(
@@ -29,13 +30,14 @@ public sealed class TeamsProvider : NotificationProviderBase
         : base(factory, logger, options) { }
 
     protected override async Task SendInternalAsync(
-        ProviderConfigBase config,
+        TeamsConfig config,
         string message,
         NotificationService.NotifyLevel level,
-        SendOptions? options = null)
+        TeamsSendOptions options)
     {
-        var c = (TeamsConfig)config;
-        var o = options as TeamsSendOptions;
+        var text = options.ContentFormat == MessageContentFormat.Markdown
+            ? RegexPatterns.StripMarkdown(message)
+            : message;
 
         var payload = new
         {
@@ -47,25 +49,15 @@ public sealed class TeamsProvider : NotificationProviderBase
             {
                 new
                 {
-                    activityTitle = o?.Title ?? $"{Emoji(level)} {level}",
-                    text = message
+                    activityTitle = options.Title ?? $"{Emoji(level)} {level}",
+                    text = text
                 }
             }
         };
 
         var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
-        await EnsureSuccessAsync(response, c.Alias);
-    }
-
-    protected override Task SendMarkdownInternalAsync(
-        ProviderConfigBase config,
-        string markdownContent,
-        NotificationService.NotifyLevel level,
-        SendOptions? options = null)
-    {
-        var plain = RegexPatterns.StripMarkdown(markdownContent);
-        return SendInternalAsync(config, plain, level, options);
+        var response = await client.PostAsJsonAsync(config.WebhookUrl, payload);
+        await EnsureSuccessAsync(response, config.Alias);
     }
 
     private static string GetThemeColor(NotificationService.NotifyLevel level) => level switch

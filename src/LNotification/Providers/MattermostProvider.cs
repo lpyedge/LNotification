@@ -6,7 +6,7 @@ using LNotification.Internal;
 
 namespace LNotification.Providers;
 
-public sealed class MattermostProvider : NotificationProviderBase
+public sealed class MattermostProvider : NotificationProviderBase<MattermostProvider.MattermostConfig, MattermostProvider.MattermostSendOptions>
 {
     /// <summary>
     /// Per-message options for Mattermost webhook notifications.
@@ -23,10 +23,11 @@ public sealed class MattermostProvider : NotificationProviderBase
         public string? Channel { get; set; }
     }
 
-    public sealed class MattermostConfig : ProviderConfigBase
+    public sealed class MattermostConfig : ProviderConfigBase, IProviderSendOptions<MattermostSendOptions>
     {
         public string WebhookUrl { get; set; } = string.Empty;
         public string? Channel { get; set; }
+        public MattermostSendOptions SendOptions { get; set; } = new();
     }
 
     internal MattermostProvider(
@@ -36,49 +37,23 @@ public sealed class MattermostProvider : NotificationProviderBase
         : base(factory, logger, options) { }
 
     protected override async Task SendInternalAsync(
-        ProviderConfigBase config,
+        MattermostConfig config,
         string message,
         NotificationService.NotifyLevel level,
-        SendOptions? options = null)
+        MattermostSendOptions options)
     {
-        var c = (MattermostConfig)config;
-        var o = options as MattermostSendOptions;
-        var channel = o?.Channel ?? c.Channel;
+        var channel = options.Channel ?? config.Channel;
 
         var payload = new
         {
             channel = channel,
             text = $"{Emoji(level)} {message}",
-            username = o?.Username,
-            icon_url = o?.IconUrl
+            username = options.Username,
+            icon_url = options.IconUrl
         };
 
         var client = HttpClientFactory.CreateClient(NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
-        await EnsureSuccessAsync(response, c.Alias);
-    }
-
-    protected override async Task SendMarkdownInternalAsync(
-        ProviderConfigBase config,
-        string markdownContent,
-        NotificationService.NotifyLevel level,
-        SendOptions? options = null)
-    {
-        // Mattermost natively supports Markdown
-        var c = (MattermostConfig)config;
-        var o = options as MattermostSendOptions;
-        var channel = o?.Channel ?? c.Channel;
-
-        var payload = new
-        {
-            channel = channel,
-            text = $"{Emoji(level)} {markdownContent}",
-            username = o?.Username,
-            icon_url = o?.IconUrl
-        };
-
-        var client = HttpClientFactory.CreateClient(NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
-        await EnsureSuccessAsync(response, c.Alias);
+        var response = await client.PostAsJsonAsync(config.WebhookUrl, payload);
+        await EnsureSuccessAsync(response, config.Alias);
     }
 }

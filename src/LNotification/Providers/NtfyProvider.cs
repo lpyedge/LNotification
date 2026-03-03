@@ -21,7 +21,7 @@ public enum NtfyPriority
     Urgent = 5
 }
 
-public sealed class NtfyProvider : NotificationProviderBase
+public sealed class NtfyProvider : NotificationProviderBase<NtfyProvider.NtfyConfig, NtfyProvider.NtfySendOptions>
 {
     /// <summary>
     /// Per-message options for ntfy notifications.
@@ -39,12 +39,13 @@ public sealed class NtfyProvider : NotificationProviderBase
         public string? ClickUrl { get; set; }
     }
 
-    public sealed class NtfyConfig : ProviderConfigBase
+    public sealed class NtfyConfig : ProviderConfigBase, IProviderSendOptions<NtfySendOptions>
     {
         public string ServerUrl { get; set; } = "https://ntfy.sh";
         public string Topic { get; set; } = string.Empty;
         public string? Token { get; set; }
         public int Priority { get; set; } = 3;
+        public NtfySendOptions SendOptions { get; set; } = new();
     }
 
     internal NtfyProvider(
@@ -54,41 +55,44 @@ public sealed class NtfyProvider : NotificationProviderBase
         : base(factory, logger, options) { }
 
     protected override async Task SendInternalAsync(
-        ProviderConfigBase config,
+        NtfyConfig config,
         string message,
         NotificationService.NotifyLevel level,
-        SendOptions? options = null)
+        NtfySendOptions options)
     {
-        var c = (NtfyConfig)config;
-        var o = options as NtfySendOptions;
-        var url = $"{c.ServerUrl.TrimEnd('/')}/{c.Topic}";
+        var url = $"{config.ServerUrl.TrimEnd('/')}/{config.Topic}";
 
         var request = new HttpRequestMessage(HttpMethod.Post, url)
         {
             Content = new StringContent($"{Emoji(level)} {message}", Encoding.UTF8, "text/plain")
         };
 
-        var priority = o?.Priority != null ? (int)o.Priority : c.Priority;
+        var priority = options.Priority != null ? (int)options.Priority : config.Priority;
         request.Headers.TryAddWithoutValidation("Priority", priority.ToString());
         request.Headers.TryAddWithoutValidation("Title", $"[{level}] Notification");
 
-        if (!string.IsNullOrWhiteSpace(o?.Tags))
+        if (!string.IsNullOrWhiteSpace(options.Tags))
         {
-            request.Headers.TryAddWithoutValidation("Tags", o!.Tags);
+            request.Headers.TryAddWithoutValidation("Tags", options.Tags);
         }
 
-        if (!string.IsNullOrWhiteSpace(o?.ClickUrl))
+        if (!string.IsNullOrWhiteSpace(options.ClickUrl))
         {
-            request.Headers.TryAddWithoutValidation("Click", o!.ClickUrl);
+            request.Headers.TryAddWithoutValidation("Click", options.ClickUrl);
         }
 
-        if (!string.IsNullOrWhiteSpace(c.Token))
+        if (options.ContentFormat == MessageContentFormat.Markdown)
         {
-            request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {c.Token}");
+            request.Headers.TryAddWithoutValidation("Markdown", "yes");
+        }
+
+        if (!string.IsNullOrWhiteSpace(config.Token))
+        {
+            request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {config.Token}");
         }
 
         var client = HttpClientFactory.CreateClient(NotificationHttpClient);
         var response = await client.SendAsync(request);
-        await EnsureSuccessAsync(response, c.Alias);
+        await EnsureSuccessAsync(response, config.Alias);
     }
 }

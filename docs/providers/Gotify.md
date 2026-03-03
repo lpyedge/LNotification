@@ -36,6 +36,7 @@ Use `GotifySendOptions` to customize individual messages:
 
 | Property | Type | Default | Description |
 |---|---|---|---|
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` |
 | Title | `string?` | null | Custom notification title |
 | Priority | `int?` | null | Priority 0–10 (0=min, 10=max) |
 

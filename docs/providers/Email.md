@@ -51,14 +51,15 @@ Use `EmailSendOptions` to customize individual messages:
 
 | Property | Type | Default | Description |
 |---|---|---|---|
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` |
 | Subject | `string?` | null | Override email subject line |
 | ReplyTo | `string?` | null | Reply-To email address |
 | BodyFormat | `EmailBodyFormat` | PlainText | `PlainText` / `Html` |
 
 ```csharp
-await service.SendAsync<EmailProvider>(
+await service.SendAsync<EmailProvider, EmailProvider.EmailSendOptions>(
     "<b>Alert!</b> Server is down.",
-    options: new EmailProvider.EmailSendOptions
+    new EmailProvider.EmailSendOptions
     {
         Subject = "Urgent: Server Down",
         ReplyTo = "ops@example.com",

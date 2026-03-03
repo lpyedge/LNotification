@@ -33,7 +33,7 @@ public enum EmailImportance
 ///   3. Grant admin consent
 ///   4. Create a client secret
 /// </summary>
-public sealed class MsGraphEmailProvider : NotificationProviderBase
+public sealed class MsGraphEmailProvider : NotificationProviderBase<MsGraphEmailProvider.MsGraphEmailConfig, MsGraphEmailProvider.MsGraphEmailSendOptions>
 {
     private const string GraphSendMailUrl = "https://graph.microsoft.com/v1.0/users/{0}/sendMail";
     private const string TokenEndpointTemplate = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token";
@@ -53,7 +53,7 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase
         public EmailImportance Importance { get; set; } = EmailImportance.Normal;
     }
 
-    public sealed class MsGraphEmailConfig : ProviderConfigBase
+    public sealed class MsGraphEmailConfig : ProviderConfigBase, IProviderSendOptions<MsGraphEmailSendOptions>
     {
         /// <summary>Azure AD tenant ID (GUID or domain)</summary>
         public string TenantId { get; set; } = string.Empty;
@@ -84,6 +84,8 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase
 
         /// <summary>Save sent message to Sent Items folder (default: false)</summary>
         public bool SaveToSentItems { get; set; } = false;
+
+        public MsGraphEmailSendOptions SendOptions { get; set; } = new();
     }
 
     // Token cache — per provider instance (re-created on config reload)
@@ -98,28 +100,21 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase
         : base(factory, logger, options) { }
 
     protected override async Task SendInternalAsync(
-        ProviderConfigBase config,
+        MsGraphEmailConfig config,
         string message,
         NotificationService.NotifyLevel level,
-        SendOptions? options = null)
+        MsGraphEmailSendOptions options)
     {
-        var c = (MsGraphEmailConfig)config;
-        var o = options as MsGraphEmailSendOptions;
-        var subject = o?.Subject ?? $"{c.SubjectPrefix} [{level}]";
-        await SendGraphEmailAsync(c, subject, message, isHtml: false, o);
-    }
+        var subject = options.Subject ?? $"{config.SubjectPrefix} [{level}]";
 
-    protected override async Task SendMarkdownInternalAsync(
-        ProviderConfigBase config,
-        string markdownContent,
-        NotificationService.NotifyLevel level,
-        SendOptions? options = null)
-    {
-        var c = (MsGraphEmailConfig)config;
-        var o = options as MsGraphEmailSendOptions;
-        var subject = o?.Subject ?? $"{c.SubjectPrefix} [{level}]";
-        var htmlBody = RegexPatterns.MarkdownToHtml(markdownContent);
-        await SendGraphEmailAsync(c, subject, htmlBody, isHtml: true, o);
+        if (options.ContentFormat == MessageContentFormat.Markdown)
+        {
+            var htmlBody = RegexPatterns.MarkdownToHtml(message);
+            await SendGraphEmailAsync(config, subject, htmlBody, isHtml: true, options);
+            return;
+        }
+
+        await SendGraphEmailAsync(config, subject, message, isHtml: false, options);
     }
 
     private async Task SendGraphEmailAsync(
@@ -127,7 +122,7 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase
         string subject,
         string body,
         bool isHtml,
-        MsGraphEmailSendOptions? o)
+        MsGraphEmailSendOptions options)
     {
         if (config.To == null || config.To.Count == 0)
         {
@@ -173,12 +168,12 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase
         }
 
         var replyToList = new List<object>();
-        if (!string.IsNullOrWhiteSpace(o?.ReplyTo))
+        if (!string.IsNullOrWhiteSpace(options.ReplyTo))
         {
-            replyToList.Add(new { emailAddress = new { address = o!.ReplyTo } });
+            replyToList.Add(new { emailAddress = new { address = options.ReplyTo } });
         }
 
-        var importanceStr = (o?.Importance ?? EmailImportance.Normal) switch
+        var importanceStr = options.Importance switch
         {
             EmailImportance.Low => "low",
             EmailImportance.High => "high",

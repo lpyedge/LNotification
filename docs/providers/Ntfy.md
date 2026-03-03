@@ -45,6 +45,7 @@ Use `NtfySendOptions` to customize individual messages:
 
 | Property | Type | Default | Description |
 |---|---|---|---|
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (`Markdown` sends `Markdown: yes` header) |
 | Priority | `NtfyPriority?` | null | `Min(1)` / `Low(2)` / `Default(3)` / `High(4)` / `Urgent(5)` |
 | Tags | `string?` | null | Comma-separated emoji tags (e.g. "warning,skull") |
 | ClickUrl | `string?` | null | URL opened on notification click |

@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using LNotification;
 using LNotification.Internal;
 using Microsoft.Extensions.Configuration;
@@ -96,4 +98,15 @@ public class NotificationServiceTests
         Assert.Throws<ArgumentException>(() =>
             NotificationService.AddLNotification(services, "   "));
     }
+
+    [Fact]
+    public void NotificationService_PublicApi_DoesNotContainSendMarkdownAsync()
+    {
+        var hasSendMarkdownAsync = typeof(NotificationService)
+            .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+            .Any(m => m.Name == "SendMarkdownAsync");
+
+        Assert.False(hasSendMarkdownAsync);
+    }
 }
+

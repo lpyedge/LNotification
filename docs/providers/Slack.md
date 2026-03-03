@@ -32,6 +32,7 @@ Use `SlackSendOptions` to customize individual messages:
 
 | Property | Type | Default | Description |
 |---|---|---|---|
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` |
 | Channel | `string?` | null | Override target channel (e.g. "#alerts") |
 | Username | `string?` | null | Override bot display name |
 | IconEmoji | `string?` | null | Bot icon emoji (e.g. ":warning:") |

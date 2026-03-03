@@ -19,7 +19,7 @@ public enum DiscordMessageFlag
     SuppressNotifications = 1 << 12
 }
 
-public sealed class DiscordProvider : NotificationProviderBase
+public sealed class DiscordProvider : NotificationProviderBase<DiscordProvider.DiscordConfig, DiscordProvider.DiscordSendOptions>
 {
     /// <summary>
     /// Per-message options for Discord webhook notifications.
@@ -36,9 +36,10 @@ public sealed class DiscordProvider : NotificationProviderBase
         public DiscordMessageFlag Flags { get; set; } = DiscordMessageFlag.None;
     }
 
-    public sealed class DiscordConfig : ProviderConfigBase
+    public sealed class DiscordConfig : ProviderConfigBase, IProviderSendOptions<DiscordSendOptions>
     {
         public string WebhookUrl { get; set; } = string.Empty;
+        public DiscordSendOptions SendOptions { get; set; } = new();
     }
 
     internal DiscordProvider(
@@ -48,47 +49,21 @@ public sealed class DiscordProvider : NotificationProviderBase
         : base(factory, logger, options) { }
 
     protected override async Task SendInternalAsync(
-        ProviderConfigBase config,
+        DiscordConfig config,
         string message,
         NotificationService.NotifyLevel level,
-        SendOptions? options = null)
+        DiscordSendOptions options)
     {
-        var c = (DiscordConfig)config;
-        var o = options as DiscordSendOptions;
-
         var payload = new
         {
             content = $"{Emoji(level)} {message}",
-            username = o?.Username,
-            avatar_url = o?.AvatarUrl,
-            flags = o != null && o.Flags != DiscordMessageFlag.None ? (int?)o.Flags : null
+            username = options.Username,
+            avatar_url = options.AvatarUrl,
+            flags = options.Flags != DiscordMessageFlag.None ? (int?)options.Flags : null
         };
 
         var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
-        await EnsureSuccessAsync(response, c.Alias);
-    }
-
-    protected override async Task SendMarkdownInternalAsync(
-        ProviderConfigBase config,
-        string markdownContent,
-        NotificationService.NotifyLevel level,
-        SendOptions? options = null)
-    {
-        // Discord natively supports Markdown
-        var c = (DiscordConfig)config;
-        var o = options as DiscordSendOptions;
-
-        var payload = new
-        {
-            content = $"{Emoji(level)} {markdownContent}",
-            username = o?.Username,
-            avatar_url = o?.AvatarUrl,
-            flags = o != null && o.Flags != DiscordMessageFlag.None ? (int?)o.Flags : null
-        };
-
-        var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(c.WebhookUrl, payload);
-        await EnsureSuccessAsync(response, c.Alias);
+        var response = await client.PostAsJsonAsync(config.WebhookUrl, payload);
+        await EnsureSuccessAsync(response, config.Alias);
     }
 }

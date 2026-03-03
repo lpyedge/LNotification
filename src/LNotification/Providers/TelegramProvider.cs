@@ -17,7 +17,7 @@ public enum TelegramParseMode
     Html
 }
 
-public sealed class TelegramProvider : NotificationProviderBase
+public sealed class TelegramProvider : NotificationProviderBase<TelegramProvider.TelegramConfig, TelegramProvider.TelegramSendOptions>
 {
     /// <summary>
     /// Per-message options for Telegram notifications.
@@ -33,15 +33,15 @@ public sealed class TelegramProvider : NotificationProviderBase
         /// <summary>Protect the message from forwarding and saving by recipients.</summary>
         public bool ProtectContent { get; set; }
 
-        /// <summary>Override parse mode for SendAsync (plain text calls). Default: None.
-        /// For SendMarkdownAsync, MarkdownV2 is always used regardless of this setting.</summary>
+        /// <summary>Override parse mode for plain text content. Ignored when ContentFormat is Markdown.</summary>
         public TelegramParseMode ParseMode { get; set; } = TelegramParseMode.None;
     }
 
-    public sealed class TelegramConfig : ProviderConfigBase
+    public sealed class TelegramConfig : ProviderConfigBase, IProviderSendOptions<TelegramSendOptions>
     {
         public string BotToken { get; set; } = string.Empty;
         public string ChatId { get; set; } = string.Empty;
+        public TelegramSendOptions SendOptions { get; set; } = new();
     }
 
     internal TelegramProvider(
@@ -51,53 +51,40 @@ public sealed class TelegramProvider : NotificationProviderBase
         : base(factory, logger, options) { }
 
     protected override async Task SendInternalAsync(
-        ProviderConfigBase config,
+        TelegramConfig config,
         string message,
         NotificationService.NotifyLevel level,
-        SendOptions? options = null)
+        TelegramSendOptions options)
     {
-        var c = (TelegramConfig)config;
-        var o = options as TelegramSendOptions;
-        var url = $"https://api.telegram.org/bot{c.BotToken}/sendMessage";
-
-        var payload = BuildPayload(c, $"{Emoji(level)} {message}", o);
+        var url = $"https://api.telegram.org/bot{config.BotToken}/sendMessage";
+        var payload = BuildPayload(config, message, level, options);
 
         var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
         var response = await client.PostAsJsonAsync(url, payload);
-        await EnsureSuccessAsync(response, c.Alias);
+        await EnsureSuccessAsync(response, config.Alias);
     }
 
-    protected override async Task SendMarkdownInternalAsync(
-        ProviderConfigBase config,
-        string markdownContent,
+    private static object BuildPayload(
+        TelegramConfig config,
+        string message,
         NotificationService.NotifyLevel level,
-        SendOptions? options = null)
+        TelegramSendOptions options)
     {
-        var c = (TelegramConfig)config;
-        var o = options as TelegramSendOptions;
-        var safeMarkdown = RegexPatterns.EscapeTelegramMarkdown(markdownContent);
-        var url = $"https://api.telegram.org/bot{c.BotToken}/sendMessage";
-
-        // SendMarkdownAsync always uses MarkdownV2
-        var payload = new
+        if (options.ContentFormat == MessageContentFormat.Markdown)
         {
-            chat_id = c.ChatId,
-            text = $"{Emoji(level)} {safeMarkdown}",
-            parse_mode = "MarkdownV2",
-            message_thread_id = o?.MessageThreadId,
-            disable_notification = o?.DisableNotification ?? false,
-            protect_content = o?.ProtectContent ?? false
-        };
+            var safeMarkdown = RegexPatterns.EscapeTelegramMarkdown(message);
+            return new
+            {
+                chat_id = config.ChatId,
+                text = $"{Emoji(level)} {safeMarkdown}",
+                parse_mode = "MarkdownV2",
+                message_thread_id = options.MessageThreadId,
+                disable_notification = options.DisableNotification,
+                protect_content = options.ProtectContent
+            };
+        }
 
-        var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(url, payload);
-        await EnsureSuccessAsync(response, c.Alias);
-    }
-
-    private static object BuildPayload(TelegramConfig c, string text, TelegramSendOptions? o)
-    {
-        var parseMode = o?.ParseMode ?? TelegramParseMode.None;
-        var parseModeStr = parseMode switch
+        var parseModeStr = options.ParseMode switch
         {
             TelegramParseMode.MarkdownV2 => "MarkdownV2",
             TelegramParseMode.Html => "HTML",
@@ -106,12 +93,12 @@ public sealed class TelegramProvider : NotificationProviderBase
 
         return new
         {
-            chat_id = c.ChatId,
-            text = text,
+            chat_id = config.ChatId,
+            text = $"{Emoji(level)} {message}",
             parse_mode = parseModeStr,
-            message_thread_id = o?.MessageThreadId,
-            disable_notification = o?.DisableNotification ?? false,
-            protect_content = o?.ProtectContent ?? false
+            message_thread_id = options.MessageThreadId,
+            disable_notification = options.DisableNotification,
+            protect_content = options.ProtectContent
         };
     }
 }

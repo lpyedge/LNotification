@@ -30,6 +30,14 @@
 }
 ```
 
+## SendOptions
+
+Use `LineSendOptions` to customize individual messages:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (Markdown is stripped to plain text) |
+
 ## References
 
 - https://developers.line.biz/en/docs/messaging-api/

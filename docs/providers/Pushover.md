@@ -43,9 +43,10 @@ Use `PushoverSendOptions` to customize individual messages:
 
 | Property | Type | Default | Description |
 |---|---|---|---|
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (`Markdown` is converted to HTML for Pushover) |
 | Priority | `PushoverPriority?` | null | `Lowest(-2)` / `Low(-1)` / `Normal(0)` / `High(1)` / `Emergency(2)` |
 | Sound | `PushoverSound` | Default | 23 built-in sounds (e.g. `Siren`, `Magic`, `CashRegister`, `Vibrate`, `None`) |
-| Format | `PushoverMessageFormat` | PlainText | `PlainText` / `Html` / `Monospace` |
+| Format | `PushoverMessageFormat` | PlainText | `PlainText` / `Html` / `Monospace` (used when ContentFormat is `PlainText`) |
 | Device | `string?` | null | Target specific device name |
 | Url | `string?` | null | Supplementary URL shown with message |
 | UrlTitle | `string?` | null | Display title for supplementary URL |
