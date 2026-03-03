@@ -12,6 +12,17 @@ using LNotification.Internal;
 
 namespace LNotification.Providers;
 
+/// <summary>Microsoft Graph email importance level.</summary>
+public enum EmailImportance
+{
+    /// <summary>Low importance.</summary>
+    Low,
+    /// <summary>Normal importance (default).</summary>
+    Normal,
+    /// <summary>High importance. Flagged with exclamation mark in most email clients.</summary>
+    High
+}
+
 /// <summary>
 /// Microsoft Graph API email provider using OAuth2 client credentials flow.
 /// Replaces SMTP for enterprise mailboxes that require modern authentication.
@@ -26,6 +37,21 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase
 {
     private const string GraphSendMailUrl = "https://graph.microsoft.com/v1.0/users/{0}/sendMail";
     private const string TokenEndpointTemplate = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token";
+
+    /// <summary>
+    /// Per-message options for Microsoft Graph email notifications.
+    /// </summary>
+    public sealed class MsGraphEmailSendOptions : SendOptions
+    {
+        /// <summary>Override email subject. If null, uses default "[SubjectPrefix] [Level]".</summary>
+        public string? Subject { get; set; }
+
+        /// <summary>Reply-To email address.</summary>
+        public string? ReplyTo { get; set; }
+
+        /// <summary>Email importance level.</summary>
+        public EmailImportance Importance { get; set; } = EmailImportance.Normal;
+    }
 
     public sealed class MsGraphEmailConfig : ProviderConfigBase
     {
@@ -74,29 +100,34 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase
     protected override async Task SendInternalAsync(
         ProviderConfigBase config,
         string message,
-        NotificationService.NotifyLevel level)
+        NotificationService.NotifyLevel level,
+        SendOptions? options = null)
     {
         var c = (MsGraphEmailConfig)config;
-        var subject = $"{c.SubjectPrefix} [{level}]";
-        await SendGraphEmailAsync(c, subject, message, isHtml: false);
+        var o = options as MsGraphEmailSendOptions;
+        var subject = o?.Subject ?? $"{c.SubjectPrefix} [{level}]";
+        await SendGraphEmailAsync(c, subject, message, isHtml: false, o);
     }
 
     protected override async Task SendMarkdownInternalAsync(
         ProviderConfigBase config,
         string markdownContent,
-        NotificationService.NotifyLevel level)
+        NotificationService.NotifyLevel level,
+        SendOptions? options = null)
     {
         var c = (MsGraphEmailConfig)config;
-        var subject = $"{c.SubjectPrefix} [{level}]";
+        var o = options as MsGraphEmailSendOptions;
+        var subject = o?.Subject ?? $"{c.SubjectPrefix} [{level}]";
         var htmlBody = RegexPatterns.MarkdownToHtml(markdownContent);
-        await SendGraphEmailAsync(c, subject, htmlBody, isHtml: true);
+        await SendGraphEmailAsync(c, subject, htmlBody, isHtml: true, o);
     }
 
     private async Task SendGraphEmailAsync(
         MsGraphEmailConfig config,
         string subject,
         string body,
-        bool isHtml)
+        bool isHtml,
+        MsGraphEmailSendOptions? o)
     {
         if (config.To == null || config.To.Count == 0)
         {
@@ -141,6 +172,19 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase
             }
         }
 
+        var replyToList = new List<object>();
+        if (!string.IsNullOrWhiteSpace(o?.ReplyTo))
+        {
+            replyToList.Add(new { emailAddress = new { address = o!.ReplyTo } });
+        }
+
+        var importanceStr = (o?.Importance ?? EmailImportance.Normal) switch
+        {
+            EmailImportance.Low => "low",
+            EmailImportance.High => "high",
+            _ => "normal"
+        };
+
         var payload = new
         {
             message = new
@@ -163,7 +207,9 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase
                 },
                 toRecipients = toRecipients,
                 ccRecipients = ccRecipients,
-                bccRecipients = bccRecipients
+                bccRecipients = bccRecipients,
+                replyTo = replyToList,
+                importance = importanceStr
             },
             saveToSentItems = config.SaveToSentItems
         };
@@ -204,8 +250,8 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase
                 ["scope"] = "https://graph.microsoft.com/.default"
             };
 
-            var client = HttpClientFactory.CreateClient(NotificationHttpClient);
-            var response = await client.PostAsync(
+            var httpClient = HttpClientFactory.CreateClient(NotificationHttpClient);
+            var response = await httpClient.PostAsync(
                 tokenUrl,
                 new FormUrlEncodedContent(tokenPayload.Select(kv => new KeyValuePair<string?, string?>(kv.Key, kv.Value))));
 

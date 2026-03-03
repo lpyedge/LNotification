@@ -25,6 +25,25 @@ You need the "Manage Webhooks" permission on the server/channel.
 }
 ```
 
+## SendOptions
+
+Use `DiscordSendOptions` to customize individual messages:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| Username | `string?` | null | Override bot display name |
+| AvatarUrl | `string?` | null | Override bot avatar URL |
+| Flags | `DiscordMessageFlag` | None | `SuppressEmbeds` / `SuppressNotifications` |
+
+```csharp
+await service.SendAsync<DiscordProvider>("msg",
+    options: new DiscordProvider.DiscordSendOptions
+    {
+        Username = "Alert Bot",
+        Flags = DiscordMessageFlag.SuppressNotifications
+    });
+```
+
 ## References
 
 - https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks

@@ -25,7 +25,8 @@ public sealed class LineProvider : NotificationProviderBase
     protected override async Task SendInternalAsync(
         ProviderConfigBase config,
         string message,
-        NotificationService.NotifyLevel level)
+        NotificationService.NotifyLevel level,
+        SendOptions? options = null)
     {
         var c = (LineConfig)config;
         var payload = new

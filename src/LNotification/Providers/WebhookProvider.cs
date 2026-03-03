@@ -8,8 +8,30 @@ using LNotification.Internal;
 
 namespace LNotification.Providers;
 
+/// <summary>Common HTTP content types for webhook requests.</summary>
+public enum WebhookContentType
+{
+    /// <summary>application/json</summary>
+    Json,
+    /// <summary>application/xml</summary>
+    Xml,
+    /// <summary>application/x-www-form-urlencoded</summary>
+    FormUrlEncoded,
+    /// <summary>text/plain</summary>
+    PlainText
+}
+
 public sealed class WebhookProvider : NotificationProviderBase
 {
+    /// <summary>
+    /// Per-message options for generic webhook notifications.
+    /// </summary>
+    public sealed class WebhookSendOptions : SendOptions
+    {
+        /// <summary>Override Content-Type for this request. Default: Json (application/json).</summary>
+        public WebhookContentType ContentType { get; set; } = WebhookContentType.Json;
+    }
+
     public sealed class WebhookConfig : ProviderConfigBase
     {
         public string Url { get; set; } = string.Empty;
@@ -32,10 +54,14 @@ public sealed class WebhookProvider : NotificationProviderBase
     protected override async Task SendInternalAsync(
         ProviderConfigBase config,
         string message,
-        NotificationService.NotifyLevel level)
+        NotificationService.NotifyLevel level,
+        SendOptions? options = null)
     {
         var c = (WebhookConfig)config;
+        var o = options as WebhookSendOptions;
         var client = HttpClientFactory.CreateClient(NotificationHttpClient);
+
+        var contentType = ResolveContentType(o?.ContentType ?? WebhookContentType.Json);
 
         HttpRequestMessage request;
 
@@ -48,7 +74,7 @@ public sealed class WebhookProvider : NotificationProviderBase
 
             request = new HttpRequestMessage(new HttpMethod(c.Method), c.Url)
             {
-                Content = new StringContent(body, Encoding.UTF8, "application/json")
+                Content = new StringContent(body, Encoding.UTF8, contentType)
             };
         }
         else
@@ -68,4 +94,13 @@ public sealed class WebhookProvider : NotificationProviderBase
         var response = await client.SendAsync(request);
         await EnsureSuccessAsync(response, c.Alias);
     }
+
+    private static string ResolveContentType(WebhookContentType ct) => ct switch
+    {
+        WebhookContentType.Json => "application/json",
+        WebhookContentType.Xml => "application/xml",
+        WebhookContentType.FormUrlEncoded => "application/x-www-form-urlencoded",
+        WebhookContentType.PlainText => "text/plain",
+        _ => "application/json"
+    };
 }

@@ -46,23 +46,25 @@ public sealed class NotificationService
     public Task<bool> SendAsync<TProvider>(
         string message,
         NotifyLevel level = NotifyLevel.Info,
-        string? alias = null)
+        string? alias = null,
+        SendOptions? options = null)
         where TProvider : NotificationProviderBase
     {
         var resolvedAlias = alias ?? "default";
         var provider = GetOrCreateProvider<TProvider>(resolvedAlias);
-        return provider.SendAsync(message, level, resolvedAlias);
+        return provider.SendAsync(message, level, resolvedAlias, options);
     }
 
     public Task<bool> SendMarkdownAsync<TProvider>(
         string markdownContent,
         NotifyLevel level = NotifyLevel.Info,
-        string? alias = null)
+        string? alias = null,
+        SendOptions? options = null)
         where TProvider : NotificationProviderBase
     {
         var resolvedAlias = alias ?? "default";
         var provider = GetOrCreateProvider<TProvider>(resolvedAlias);
-        return provider.SendMarkdownAsync(markdownContent, level, resolvedAlias);
+        return provider.SendMarkdownAsync(markdownContent, level, resolvedAlias, options);
     }
 
     private TProvider GetOrCreateProvider<TProvider>(string alias)

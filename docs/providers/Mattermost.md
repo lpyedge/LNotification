@@ -32,6 +32,16 @@ You need the "Manage Incoming Webhooks" permission.
 - Mattermost natively supports Markdown in webhook messages.
 - If Channel is omitted, the message goes to the channel configured in the webhook.
 
+## SendOptions
+
+Use `MattermostSendOptions` to customize individual messages:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| Username | `string?` | null | Override bot display name |
+| IconUrl | `string?` | null | Override bot avatar URL |
+| Channel | `string?` | null | Override target channel |
+
 ## References
 
 - https://developers.mattermost.com/integrate/webhooks/incoming/

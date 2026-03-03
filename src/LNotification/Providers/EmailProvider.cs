@@ -9,8 +9,33 @@ using LNotification.Internal;
 
 namespace LNotification.Providers;
 
+/// <summary>Email body format.</summary>
+public enum EmailBodyFormat
+{
+    /// <summary>Plain text email body.</summary>
+    PlainText,
+    /// <summary>HTML formatted email body.</summary>
+    Html
+}
+
 public sealed class EmailProvider : NotificationProviderBase
 {
+    /// <summary>
+    /// Per-message options for SMTP email notifications.
+    /// </summary>
+    public sealed class EmailSendOptions : SendOptions
+    {
+        /// <summary>Override email subject line. If null, uses default "[SubjectPrefix] [Level]".</summary>
+        public string? Subject { get; set; }
+
+        /// <summary>Reply-To email address.</summary>
+        public string? ReplyTo { get; set; }
+
+        /// <summary>Body format for SendAsync. Default: PlainText.
+        /// SendMarkdownAsync always converts to HTML regardless of this setting.</summary>
+        public EmailBodyFormat BodyFormat { get; set; } = EmailBodyFormat.PlainText;
+    }
+
     public sealed class EmailConfig : ProviderConfigBase
     {
         public string SmtpHost { get; set; } = string.Empty;
@@ -39,29 +64,35 @@ public sealed class EmailProvider : NotificationProviderBase
     protected override Task SendInternalAsync(
         ProviderConfigBase config,
         string message,
-        NotificationService.NotifyLevel level)
+        NotificationService.NotifyLevel level,
+        SendOptions? options = null)
     {
         var c = (EmailConfig)config;
-        var subject = $"{c.SubjectPrefix} [{level}]";
-        return SendEmailAsync(c, subject, message, isHtml: false);
+        var o = options as EmailSendOptions;
+        var subject = o?.Subject ?? $"{c.SubjectPrefix} [{level}]";
+        var isHtml = o?.BodyFormat == EmailBodyFormat.Html;
+        return SendEmailAsync(c, subject, message, isHtml, o?.ReplyTo);
     }
 
     protected override Task SendMarkdownInternalAsync(
         ProviderConfigBase config,
         string markdownContent,
-        NotificationService.NotifyLevel level)
+        NotificationService.NotifyLevel level,
+        SendOptions? options = null)
     {
         var c = (EmailConfig)config;
-        var subject = $"{c.SubjectPrefix} [{level}]";
+        var o = options as EmailSendOptions;
+        var subject = o?.Subject ?? $"{c.SubjectPrefix} [{level}]";
         var htmlBody = RegexPatterns.MarkdownToHtml(markdownContent);
-        return SendEmailAsync(c, subject, htmlBody, isHtml: true);
+        return SendEmailAsync(c, subject, htmlBody, isHtml: true, o?.ReplyTo);
     }
 
     private async Task SendEmailAsync(
         EmailConfig config,
         string subject,
         string body,
-        bool isHtml)
+        bool isHtml,
+        string? replyTo = null)
     {
         if (config.To == null || config.To.Count == 0)
         {
@@ -104,13 +135,17 @@ public sealed class EmailProvider : NotificationProviderBase
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(replyTo))
+        {
+            mailMessage.ReplyToList.Add(new MailAddress(replyTo));
+        }
+
         using var client = new SmtpClient(config.SmtpHost, config.SmtpPort)
         {
             EnableSsl = config.EnableSsl,
             Timeout = TimeoutSeconds * 1000
         };
 
-        // 修复：同时检查Username和Password
         if (!string.IsNullOrWhiteSpace(config.Username) &&
             !string.IsNullOrWhiteSpace(config.Password))
         {

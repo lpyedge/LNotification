@@ -40,7 +40,8 @@ public abstract class NotificationProviderBase
     public async Task<bool> SendAsync(
         string message,
         NotificationService.NotifyLevel level,
-        string? alias)
+        string? alias,
+        SendOptions? options = null)
     {
         var config = ResolveConfig(alias);
         if (config == null)
@@ -52,7 +53,7 @@ public abstract class NotificationProviderBase
         {
             await RetryAsync(async () =>
             {
-                await SendInternalAsync(config, message, level);
+                await SendInternalAsync(config, message, level, options);
             });
 
             Logger.LogInformation("{Provider}({Alias}) sent successfully",
@@ -76,7 +77,8 @@ public abstract class NotificationProviderBase
     public async Task<bool> SendMarkdownAsync(
         string markdownContent,
         NotificationService.NotifyLevel level,
-        string? alias)
+        string? alias,
+        SendOptions? options = null)
     {
         var config = ResolveConfig(alias);
         if (config == null)
@@ -88,7 +90,7 @@ public abstract class NotificationProviderBase
         {
             await RetryAsync(async () =>
             {
-                await SendMarkdownInternalAsync(config, markdownContent, level);
+                await SendMarkdownInternalAsync(config, markdownContent, level, options);
             });
 
             Logger.LogInformation("{Provider}({Alias}) markdown sent successfully",
@@ -143,15 +145,17 @@ public abstract class NotificationProviderBase
     protected abstract Task SendInternalAsync(
         ProviderConfigBase config,
         string message,
-        NotificationService.NotifyLevel level);
+        NotificationService.NotifyLevel level,
+        SendOptions? options = null);
 
     protected virtual Task SendMarkdownInternalAsync(
         ProviderConfigBase config,
         string markdownContent,
-        NotificationService.NotifyLevel level)
+        NotificationService.NotifyLevel level,
+        SendOptions? options = null)
     {
         var plain = RegexPatterns.StripMarkdown(markdownContent);
-        return SendInternalAsync(config, plain, level);
+        return SendInternalAsync(config, plain, level, options);
     }
 
     protected async Task EnsureSuccessAsync(HttpResponseMessage response, string? alias)

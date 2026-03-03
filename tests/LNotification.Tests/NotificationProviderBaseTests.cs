@@ -29,7 +29,8 @@ public class NotificationProviderBaseTests
         protected override Task SendInternalAsync(
             ProviderConfigBase config,
             string message,
-            NotificationService.NotifyLevel level)
+            NotificationService.NotifyLevel level,
+            SendOptions? options = null)
         {
             SendCalled = true;
             return Task.CompletedTask;

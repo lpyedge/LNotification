@@ -43,3 +43,11 @@ Minimal example (no custom body):
   "Url": "https://hooks.example.com/notify"
 }
 ```
+
+## SendOptions
+
+Use `WebhookSendOptions` to customize individual messages:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| ContentType | `WebhookContentType` | Json | `Json` / `Xml` / `FormUrlEncoded` / `PlainText` |

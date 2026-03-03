@@ -8,6 +8,19 @@ namespace LNotification.Providers;
 
 public sealed class GotifyProvider : NotificationProviderBase
 {
+    /// <summary>
+    /// Per-message options for Gotify notifications.
+    /// </summary>
+    public sealed class GotifySendOptions : SendOptions
+    {
+        /// <summary>Custom notification title. Overrides default "[emoji] [level]".</summary>
+        public string? Title { get; set; }
+
+        /// <summary>Override message priority (0 = min, 10 = max).
+        /// 0: no notification. 1-3: low. 4-7: normal. 8-10: high.</summary>
+        public int? Priority { get; set; }
+    }
+
     public sealed class GotifyConfig : ProviderConfigBase
     {
         public string ServerUrl { get; set; } = string.Empty;
@@ -24,15 +37,17 @@ public sealed class GotifyProvider : NotificationProviderBase
     protected override async Task SendInternalAsync(
         ProviderConfigBase config,
         string message,
-        NotificationService.NotifyLevel level)
+        NotificationService.NotifyLevel level,
+        SendOptions? options = null)
     {
         var c = (GotifyConfig)config;
+        var o = options as GotifySendOptions;
         var url = $"{c.ServerUrl.TrimEnd('/')}/message?token={c.Token}";
         var payload = new
         {
-            title = $"{Emoji(level)} [{level}]",
+            title = o?.Title ?? $"{Emoji(level)} [{level}]",
             message = message,
-            priority = c.Priority
+            priority = o?.Priority ?? c.Priority
         };
 
         var client = HttpClientFactory.CreateClient(NotificationHttpClient);
@@ -43,18 +58,19 @@ public sealed class GotifyProvider : NotificationProviderBase
     protected override async Task SendMarkdownInternalAsync(
         ProviderConfigBase config,
         string markdownContent,
-        NotificationService.NotifyLevel level)
+        NotificationService.NotifyLevel level,
+        SendOptions? options = null)
     {
         var c = (GotifyConfig)config;
+        var o = options as GotifySendOptions;
         var url = $"{c.ServerUrl.TrimEnd('/')}/message?token={c.Token}";
         var payload = new
         {
-            title = $"{Emoji(level)} [{level}]",
+            title = o?.Title ?? $"{Emoji(level)} [{level}]",
             message = markdownContent,
-            priority = c.Priority,
+            priority = o?.Priority ?? c.Priority,
             extras = new
             {
-                // Gotify supports markdown via client::display content type
                 display = new { contentType = "text/markdown" }
             }
         };

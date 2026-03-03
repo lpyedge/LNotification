@@ -22,7 +22,8 @@ public sealed class FeishuProvider : NotificationProviderBase
     protected override async Task SendInternalAsync(
         ProviderConfigBase config,
         string message,
-        NotificationService.NotifyLevel level)
+        NotificationService.NotifyLevel level,
+        SendOptions? options = null)
     {
         var c = (FeishuConfig)config;
         var payload = new
@@ -42,9 +43,10 @@ public sealed class FeishuProvider : NotificationProviderBase
     protected override Task SendMarkdownInternalAsync(
         ProviderConfigBase config,
         string markdownContent,
-        NotificationService.NotifyLevel level)
+        NotificationService.NotifyLevel level,
+        SendOptions? options = null)
     {
         var plain = RegexPatterns.StripMarkdown(markdownContent);
-        return SendInternalAsync(config, plain, level);
+        return SendInternalAsync(config, plain, level, options);
     }
 }

@@ -8,6 +8,15 @@ namespace LNotification.Providers;
 
 public sealed class TeamsProvider : NotificationProviderBase
 {
+    /// <summary>
+    /// Per-message options for Microsoft Teams webhook notifications.
+    /// </summary>
+    public sealed class TeamsSendOptions : SendOptions
+    {
+        /// <summary>Custom card activity title. Overrides default "[emoji] [level]".</summary>
+        public string? Title { get; set; }
+    }
+
     public sealed class TeamsConfig : ProviderConfigBase
     {
         public string WebhookUrl { get; set; } = string.Empty;
@@ -22,9 +31,12 @@ public sealed class TeamsProvider : NotificationProviderBase
     protected override async Task SendInternalAsync(
         ProviderConfigBase config,
         string message,
-        NotificationService.NotifyLevel level)
+        NotificationService.NotifyLevel level,
+        SendOptions? options = null)
     {
         var c = (TeamsConfig)config;
+        var o = options as TeamsSendOptions;
+
         var payload = new
         {
             @type = "MessageCard",
@@ -35,7 +47,7 @@ public sealed class TeamsProvider : NotificationProviderBase
             {
                 new
                 {
-                    activityTitle = $"{Emoji(level)} {level}",
+                    activityTitle = o?.Title ?? $"{Emoji(level)} {level}",
                     text = message
                 }
             }
@@ -49,10 +61,11 @@ public sealed class TeamsProvider : NotificationProviderBase
     protected override Task SendMarkdownInternalAsync(
         ProviderConfigBase config,
         string markdownContent,
-        NotificationService.NotifyLevel level)
+        NotificationService.NotifyLevel level,
+        SendOptions? options = null)
     {
         var plain = RegexPatterns.StripMarkdown(markdownContent);
-        return SendInternalAsync(config, plain, level);
+        return SendInternalAsync(config, plain, level, options);
     }
 
     private static string GetThemeColor(NotificationService.NotifyLevel level) => level switch

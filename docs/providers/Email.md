@@ -45,6 +45,27 @@ provider's official documentation for exact values.
 }
 ```
 
+## SendOptions
+
+Use `EmailSendOptions` to customize individual messages:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| Subject | `string?` | null | Override email subject line |
+| ReplyTo | `string?` | null | Reply-To email address |
+| BodyFormat | `EmailBodyFormat` | PlainText | `PlainText` / `Html` |
+
+```csharp
+await service.SendAsync<EmailProvider>(
+    "<b>Alert!</b> Server is down.",
+    options: new EmailProvider.EmailSendOptions
+    {
+        Subject = "Urgent: Server Down",
+        ReplyTo = "ops@example.com",
+        BodyFormat = EmailBodyFormat.Html
+    });
+```
+
 ## References
 
 - https://learn.microsoft.com/en-us/dotnet/api/system.net.mail.smtpclient

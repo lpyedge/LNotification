@@ -25,6 +25,14 @@ You need permission to add connectors to the channel.
 }
 ```
 
+## SendOptions
+
+Use `TeamsSendOptions` to customize individual messages:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| Title | `string?` | null | Custom message card title |
+
 ## References
 
 - https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook

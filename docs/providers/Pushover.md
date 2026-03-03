@@ -37,6 +37,20 @@
 }
 ```
 
+## SendOptions
+
+Use `PushoverSendOptions` to customize individual messages:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| Priority | `PushoverPriority?` | null | `Lowest(-2)` / `Low(-1)` / `Normal(0)` / `High(1)` / `Emergency(2)` |
+| Sound | `PushoverSound` | Default | 23 built-in sounds (e.g. `Siren`, `Magic`, `CashRegister`, `Vibrate`, `None`) |
+| Format | `PushoverMessageFormat` | PlainText | `PlainText` / `Html` / `Monospace` |
+| Device | `string?` | null | Target specific device name |
+| Url | `string?` | null | Supplementary URL shown with message |
+| UrlTitle | `string?` | null | Display title for supplementary URL |
+| Ttl | `int?` | null | Time-to-live in seconds |
+
 ## References
 
 - https://pushover.net/api

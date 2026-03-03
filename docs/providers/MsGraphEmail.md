@@ -49,6 +49,16 @@
 - Markdown content is converted to HTML for email body.
 - This replaces SMTP-based email for organizations that have disabled basic/SMTP authentication.
 
+## SendOptions
+
+Use `MsGraphEmailSendOptions` to customize individual messages:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| Subject | `string?` | null | Override email subject |
+| ReplyTo | `string?` | null | Reply-To address |
+| Importance | `EmailImportance` | Normal | `Low` / `Normal` / `High` |
+
 ## References
 
 - https://learn.microsoft.com/en-us/graph/api/user-sendmail

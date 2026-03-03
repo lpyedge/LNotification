@@ -30,6 +30,15 @@
 
 - Markdown content is sent with `contentType: text/markdown` via Gotify extras, so clients that support it will render rich text.
 
+## SendOptions
+
+Use `GotifySendOptions` to customize individual messages:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| Title | `string?` | null | Custom notification title |
+| Priority | `int?` | null | Priority 0–10 (0=min, 10=max) |
+
 ## References
 
 - https://gotify.net

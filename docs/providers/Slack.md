@@ -26,6 +26,16 @@ You must be logged in and have permission to install apps or manage webhooks for
 }
 ```
 
+## SendOptions
+
+Use `SlackSendOptions` to customize individual messages:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| Channel | `string?` | null | Override target channel (e.g. "#alerts") |
+| Username | `string?` | null | Override bot display name |
+| IconEmoji | `string?` | null | Bot icon emoji (e.g. ":warning:") |
+
 ## References
 
 - https://api.slack.com/messaging/webhooks

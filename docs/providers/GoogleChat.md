@@ -24,6 +24,15 @@ You need space manager permissions to create webhooks.
 }
 ```
 
+## SendOptions
+
+Use `GoogleChatSendOptions` to customize individual messages:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| ThreadKey | `string?` | null | Thread key for grouping messages |
+| ReplyOption | `GoogleChatReplyOption` | FallbackToNewThread | `FallbackToNewThread` / `ForceNewThread` |
+
 ## References
 
 - https://developers.google.com/workspace/chat/quickstart/webhooks

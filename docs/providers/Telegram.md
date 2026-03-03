@@ -32,7 +32,28 @@
 }
 ```
 
+## SendOptions
+
+Use `TelegramSendOptions` to customize individual messages:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| MessageThreadId | `int?` | null | Forum topic ID for supergroups |
+| DisableNotification | `bool` | false | Send silently (no sound) |
+| ProtectContent | `bool` | false | Prevent forwarding/saving |
+| ParseMode | `TelegramParseMode` | None | `None` / `MarkdownV2` / `Html` |
+
+```csharp
+await service.SendAsync<TelegramProvider>("msg",
+    options: new TelegramProvider.TelegramSendOptions
+    {
+        MessageThreadId = 42,
+        ParseMode = TelegramParseMode.MarkdownV2
+    });
+```
+
 ## References
 
 - https://core.telegram.org/bots#creating-a-new-bot
 - https://core.telegram.org/bots/api#getupdates
+- https://core.telegram.org/bots/api#sendmessage
