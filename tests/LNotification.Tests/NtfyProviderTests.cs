@@ -58,7 +58,6 @@ public class NtfyProviderTests
 
         var result = await provider.SendAsync(
             "plain text",
-            NotificationService.NotifyLevel.Info,
             "default");
 
         Assert.True(result);
@@ -87,7 +86,6 @@ public class NtfyProviderTests
 
         var result = await provider.SendAsync(
             "## markdown",
-            NotificationService.NotifyLevel.Info,
             "default",
             new NtfyProvider.NtfySendOptions
             {

@@ -5,22 +5,6 @@ using Microsoft.Extensions.Logging;
 using LNotification.Internal;
 
 namespace LNotification.Providers;
-
-/// <summary>Ntfy message priority level (1-5).</summary>
-public enum NtfyPriority
-{
-    /// <summary>Min priority (1). No notification sound or vibration.</summary>
-    Min = 1,
-    /// <summary>Low priority (2). No notification sound.</summary>
-    Low = 2,
-    /// <summary>Default priority (3). Standard notification.</summary>
-    Default = 3,
-    /// <summary>High priority (4). Shows even with Do Not Disturb on some devices.</summary>
-    High = 4,
-    /// <summary>Urgent priority (5). Bypasses DND, shows persistent notification.</summary>
-    Urgent = 5
-}
-
 public sealed class NtfyProvider : NotificationProviderBase<NtfyProvider.NtfyConfig, NtfyProvider.NtfySendOptions>
 {
     /// <summary>
@@ -28,8 +12,11 @@ public sealed class NtfyProvider : NotificationProviderBase<NtfyProvider.NtfyCon
     /// </summary>
     public sealed class NtfySendOptions : SendOptions
     {
-        /// <summary>Override message priority for this notification.</summary>
-        public NtfyPriority? Priority { get; set; }
+        /// <summary>Title/summary for the notification. Defaults to "Notification".</summary>
+        public string Title { get; set; } = "Notification";
+
+        /// <summary>Override message priority for this notification (1-5, default 3).</summary>
+        public int? Priority { get; set; } = 3;
 
         /// <summary>Comma-separated emoji tags (e.g. "warning,skull", "white_check_mark").
         /// See https://docs.ntfy.sh/emojis/ for the full list.</summary>
@@ -44,7 +31,6 @@ public sealed class NtfyProvider : NotificationProviderBase<NtfyProvider.NtfyCon
         public string ServerUrl { get; set; } = "https://ntfy.sh";
         public string Topic { get; set; } = string.Empty;
         public string? Token { get; set; }
-        public int Priority { get; set; } = 3;
         public NtfySendOptions SendOptions { get; set; } = new();
     }
 
@@ -57,19 +43,20 @@ public sealed class NtfyProvider : NotificationProviderBase<NtfyProvider.NtfyCon
     protected override async Task SendInternalAsync(
         NtfyConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         NtfySendOptions options)
+        
     {
         var url = $"{config.ServerUrl.TrimEnd('/')}/{config.Topic}";
 
         var request = new HttpRequestMessage(HttpMethod.Post, url)
         {
-            Content = new StringContent($"{Emoji(level)} {message}", Encoding.UTF8, "text/plain")
+            Content = new StringContent(message, Encoding.UTF8, "text/plain")
         };
 
-        var priority = options.Priority != null ? (int)options.Priority : config.Priority;
+        var priority = ResolvePriority(options.Priority);
         request.Headers.TryAddWithoutValidation("Priority", priority.ToString());
-        request.Headers.TryAddWithoutValidation("Title", $"[{level}] Notification");
+        var titleHeader = string.IsNullOrWhiteSpace(options.Title) ? "Notification" : options.Title;
+        request.Headers.TryAddWithoutValidation("Title", titleHeader);
 
         if (!string.IsNullOrWhiteSpace(options.Tags))
         {
@@ -94,5 +81,13 @@ public sealed class NtfyProvider : NotificationProviderBase<NtfyProvider.NtfyCon
         var client = HttpClientFactory.CreateClient(NotificationHttpClient);
         var response = await client.SendAsync(request);
         await EnsureSuccessAsync(response, config.Alias);
+    }
+
+    private static int ResolvePriority(int? p)
+    {
+        var val = p ?? 3;
+        if (val < 1) return 1;
+        if (val > 5) return 5;
+        return val;
     }
 }

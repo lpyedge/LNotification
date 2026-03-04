@@ -29,7 +29,6 @@ public class RetryPolicyTests
         protected override Task SendInternalAsync(
             RetryConfig config,
             string message,
-            NotificationService.NotifyLevel level,
             RetrySendOptions options)
         {
             return Task.CompletedTask;

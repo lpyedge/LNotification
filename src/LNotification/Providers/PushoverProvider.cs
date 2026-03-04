@@ -8,21 +8,6 @@ using LNotification.Internal;
 
 namespace LNotification.Providers;
 
-/// <summary>Pushover message priority (-2 to 2).</summary>
-public enum PushoverPriority
-{
-    /// <summary>Lowest (-2). No notification generated, only badge count increase on iOS.</summary>
-    Lowest = -2,
-    /// <summary>Low (-1). No sound or vibration, popup/scroll notification only.</summary>
-    Low = -1,
-    /// <summary>Normal (0). Standard sound, vibration, and alert per user settings.</summary>
-    Normal = 0,
-    /// <summary>High (1). Bypasses quiet hours. Always plays sound and vibrates.</summary>
-    High = 1,
-    /// <summary>Emergency (2). Repeated until acknowledged by user. Requires Retry and Expire on server.</summary>
-    Emergency = 2
-}
-
 /// <summary>Pushover built-in notification sounds.</summary>
 public enum PushoverSound
 {
@@ -96,14 +81,17 @@ public sealed class PushoverProvider : NotificationProviderBase<PushoverProvider
     /// </summary>
     public sealed class PushoverSendOptions : SendOptions
     {
-        /// <summary>Override message priority for this notification.</summary>
-        public PushoverPriority? Priority { get; set; }
+        /// <summary>Override message priority (1-5, default 3).</summary>
+        public int? Priority { get; set; } = 3;
 
         /// <summary>Override notification sound.</summary>
         public PushoverSound Sound { get; set; } = PushoverSound.Default;
 
         /// <summary>Message body format (plain text, HTML, or monospace).</summary>
         public PushoverMessageFormat Format { get; set; } = PushoverMessageFormat.PlainText;
+
+        /// <summary>Optional title for the notification. Defaults to "Notification".</summary>
+        public string Title { get; set; } = "Notification";
 
         /// <summary>Target specific device name (as configured in your Pushover app).</summary>
         public string? Device { get; set; }
@@ -122,8 +110,7 @@ public sealed class PushoverProvider : NotificationProviderBase<PushoverProvider
     {
         public string ApplicationToken { get; set; } = string.Empty;
         public string UserKey { get; set; } = string.Empty;
-        public int Priority { get; set; } = 0;
-        public string? Sound { get; set; }
+        
         public PushoverSendOptions SendOptions { get; set; } = new();
     }
 
@@ -136,12 +123,11 @@ public sealed class PushoverProvider : NotificationProviderBase<PushoverProvider
     protected override async Task SendInternalAsync(
         PushoverConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         PushoverSendOptions options)
     {
         var payload = options.ContentFormat == MessageContentFormat.Markdown
-            ? BuildPayload(config, RegexPatterns.MarkdownToHtml(message), level, options)
-            : BuildPayload(config, message, level, options);
+            ? BuildPayload(config, RegexPatterns.MarkdownToHtml(message), options)
+            : BuildPayload(config, message, options);
 
         if (options.ContentFormat == MessageContentFormat.Markdown)
         {
@@ -162,21 +148,20 @@ public sealed class PushoverProvider : NotificationProviderBase<PushoverProvider
     private static Dictionary<string, string> BuildPayload(
         PushoverConfig c,
         string message,
-        NotificationService.NotifyLevel level,
         PushoverSendOptions o)
     {
-        var priority = o.Priority != null ? (int)o.Priority : c.Priority;
+        var priority = ResolvePriority(o.Priority);
         var payload = new Dictionary<string, string>
         {
             ["token"] = c.ApplicationToken,
             ["user"] = c.UserKey,
-            ["title"] = $"{Emoji(level)} [{level}]",
+            ["title"] = string.IsNullOrWhiteSpace(o.Title) ? "Notification" : o.Title,
             ["message"] = message,
             ["priority"] = priority.ToString()
         };
 
         // Sound
-        var soundStr = ResolveSoundString(o.Sound, c.Sound);
+        var soundStr = ResolveSoundString(o.Sound);
         if (soundStr != null)
         {
             payload["sound"] = soundStr;
@@ -212,7 +197,7 @@ public sealed class PushoverProvider : NotificationProviderBase<PushoverProvider
         }
     }
 
-    private static string? ResolveSoundString(PushoverSound enumSound, string? configSound)
+    private static string? ResolveSoundString(PushoverSound enumSound)
     {
         if (enumSound != PushoverSound.Default)
         {
@@ -245,7 +230,20 @@ public sealed class PushoverProvider : NotificationProviderBase<PushoverProvider
             };
         }
 
-        // Fall back to config-level sound string
-        return !string.IsNullOrWhiteSpace(configSound) ? configSound : null;
+        return null;
+    }
+
+    private static int ResolvePriority(int? p)
+    {
+        // Map 1-5 -> -2..2 for Pushover
+        return p switch
+        {
+            1 => -2,
+            2 => -1,
+            3 => 0,
+            4 => 1,
+            5 => 2,
+            _ => Math.Max(-2, Math.Min(2, p ?? 0))
+        };
     }
 }

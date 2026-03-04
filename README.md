@@ -37,7 +37,7 @@ using LNotification.Internal;
 
 var notifier = app.Services.GetRequiredService<NotificationService>();
 
-await notifier.SendAsync<SlackProvider>("Hello", NotificationService.NotifyLevel.Info);
+await notifier.SendAsync<SlackProvider>("Hello");
 await notifier.SendAsync<DiscordProvider, DiscordProvider.DiscordSendOptions>(
     "**Build OK**",
     new DiscordProvider.DiscordSendOptions
@@ -45,6 +45,16 @@ await notifier.SendAsync<DiscordProvider, DiscordProvider.DiscordSendOptions>(
         ContentFormat = MessageContentFormat.Markdown,
         Username = "Build Bot"
     });
+
+// Teams example with custom summary and theme color
+await notifier.SendAsync<TeamsProvider, TeamsProvider.TeamsSendOptions>(
+  "Service started",
+  new TeamsProvider.TeamsSendOptions
+  {
+    ContentFormat = MessageContentFormat.PlainText,
+    Summary = "Service Alert",
+    ThemeColor = System.Drawing.Color.FromArgb(0x28, 0xa7, 0x45)
+  });
 ```
 
 Supported providers:

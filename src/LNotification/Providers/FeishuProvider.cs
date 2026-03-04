@@ -27,7 +27,6 @@ public sealed class FeishuProvider : NotificationProviderBase<FeishuProvider.Fei
     protected override async Task SendInternalAsync(
         FeishuConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         FeishuSendOptions options)
     {
         var text = options.ContentFormat == MessageContentFormat.Markdown
@@ -39,7 +38,7 @@ public sealed class FeishuProvider : NotificationProviderBase<FeishuProvider.Fei
             msg_type = "text",
             content = new
             {
-                text = $"{Emoji(level)} {text}"
+                text = text
             }
         };
 

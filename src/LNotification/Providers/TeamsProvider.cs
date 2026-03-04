@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using System.Drawing;
 using Microsoft.Extensions.Logging;
 using LNotification.Internal;
 
@@ -14,7 +15,12 @@ public sealed class TeamsProvider : NotificationProviderBase<TeamsProvider.Teams
     public sealed class TeamsSendOptions : SendOptions
     {
         /// <summary>Custom card activity title. Overrides default "[emoji] [level]".</summary>
-        public string? Title { get; set; }
+        public string Title { get; set; } = "Notification";
+        /// <summary>Card summary text. Defaults to "Notification".</summary>
+        public string Summary { get; set; } = "";
+
+        /// <summary>Theme color for the card as a System.Drawing.Color. Defaults to #6c757d.</summary>
+        public Color ThemeColor { get; set; } = Color.FromArgb(0x6c, 0x75, 0x7d);
     }
 
     public sealed class TeamsConfig : ProviderConfigBase, IProviderSendOptions<TeamsSendOptions>
@@ -32,24 +38,24 @@ public sealed class TeamsProvider : NotificationProviderBase<TeamsProvider.Teams
     protected override async Task SendInternalAsync(
         TeamsConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         TeamsSendOptions options)
     {
         var text = options.ContentFormat == MessageContentFormat.Markdown
             ? RegexPatterns.StripMarkdown(message)
             : message;
 
+        string themeHex = $"{options.ThemeColor.R:X2}{options.ThemeColor.G:X2}{options.ThemeColor.B:X2}";
         var payload = new
         {
             @type = "MessageCard",
             @context = "https://schema.org/extensions",
-            summary = $"[{level}] Notification",
-            themeColor = GetThemeColor(level),
+            summary = options.Summary,
+            themeColor = themeHex,
             sections = new[]
             {
                 new
                 {
-                    activityTitle = options.Title ?? $"{Emoji(level)} {level}",
+                    activityTitle = string.IsNullOrWhiteSpace(options.Title) ? "Notification" : options.Title,
                     text = text
                 }
             }
@@ -59,14 +65,4 @@ public sealed class TeamsProvider : NotificationProviderBase<TeamsProvider.Teams
         var response = await client.PostAsJsonAsync(config.WebhookUrl, payload);
         await EnsureSuccessAsync(response, config.Alias);
     }
-
-    private static string GetThemeColor(NotificationService.NotifyLevel level) => level switch
-    {
-        NotificationService.NotifyLevel.Success => "28a745",
-        NotificationService.NotifyLevel.Info => "17a2b8",
-        NotificationService.NotifyLevel.Warning => "ffc107",
-        NotificationService.NotifyLevel.Error => "dc3545",
-        NotificationService.NotifyLevel.Critical => "721c24",
-        _ => "6c757d"
-    };
 }

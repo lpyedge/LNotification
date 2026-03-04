@@ -25,11 +25,13 @@ public sealed class EmailProvider : NotificationProviderBase<EmailProvider.Email
     /// </summary>
     public sealed class EmailSendOptions : SendOptions
     {
-        /// <summary>Override email subject line. If null, uses default "[SubjectPrefix] [Level]".</summary>
-        public string? Subject { get; set; }
+        /// <summary>Override email title (subject line).</summary>
+        public string Title { get; set; } = "Notification";
 
         /// <summary>Reply-To email address.</summary>
         public string? ReplyTo { get; set; }
+
+        
 
         /// <summary>Body format for plain text content. Ignored when ContentFormat is Markdown.</summary>
         public EmailBodyFormat BodyFormat { get; set; } = EmailBodyFormat.PlainText;
@@ -51,7 +53,7 @@ public sealed class EmailProvider : NotificationProviderBase<EmailProvider.Email
         public List<string>? Cc { get; set; }
         public List<string>? Bcc { get; set; }
 
-        public string SubjectPrefix { get; set; } = "[Notify]";
+        
 
         public EmailSendOptions SendOptions { get; set; } = new();
     }
@@ -65,10 +67,9 @@ public sealed class EmailProvider : NotificationProviderBase<EmailProvider.Email
     protected override Task SendInternalAsync(
         EmailConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         EmailSendOptions options)
     {
-        var subject = options.Subject ?? $"{config.SubjectPrefix} [{level}]";
+        var subject = options.Title;
 
         if (options.ContentFormat == MessageContentFormat.Markdown)
         {
@@ -116,7 +117,7 @@ public sealed class EmailProvider : NotificationProviderBase<EmailProvider.Email
         {
             foreach (var cc in config.Cc)
             {
-                mailMessage.CC.Add(cc);
+                if (!string.IsNullOrWhiteSpace(cc)) mailMessage.CC.Add(cc);
             }
         }
 

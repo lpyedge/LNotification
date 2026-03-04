@@ -51,12 +51,11 @@ public sealed class DiscordProvider : NotificationProviderBase<DiscordProvider.D
     protected override async Task SendInternalAsync(
         DiscordConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         DiscordSendOptions options)
     {
         var payload = new
         {
-            content = $"{Emoji(level)} {message}",
+            content = message,
             username = options.Username,
             avatar_url = options.AvatarUrl,
             flags = options.Flags != DiscordMessageFlag.None ? (int?)options.Flags : null

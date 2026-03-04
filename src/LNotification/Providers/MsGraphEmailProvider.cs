@@ -43,8 +43,8 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase<MsGraphEmail
     /// </summary>
     public sealed class MsGraphEmailSendOptions : SendOptions
     {
-        /// <summary>Override email subject. If null, uses default "[SubjectPrefix] [Level]".</summary>
-        public string? Subject { get; set; }
+        /// <summary>Override email title (subject line).</summary>
+        public string? Title { get; set; }
 
         /// <summary>Reply-To email address.</summary>
         public string? ReplyTo { get; set; }
@@ -79,8 +79,7 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase<MsGraphEmail
         /// <summary>BCC recipients (optional)</summary>
         public List<string>? Bcc { get; set; }
 
-        /// <summary>Subject prefix added to all emails</summary>
-        public string SubjectPrefix { get; set; } = "[Notify]";
+        
 
         /// <summary>Save sent message to Sent Items folder (default: false)</summary>
         public bool SaveToSentItems { get; set; } = false;
@@ -102,10 +101,9 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase<MsGraphEmail
     protected override async Task SendInternalAsync(
         MsGraphEmailConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         MsGraphEmailSendOptions options)
     {
-        var subject = options.Subject ?? $"{config.SubjectPrefix} [{level}]";
+        var subject = options.Title ?? string.Empty;
 
         if (options.ContentFormat == MessageContentFormat.Markdown)
         {

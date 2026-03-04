@@ -21,6 +21,9 @@ public sealed class SlackProvider : NotificationProviderBase<SlackProvider.Slack
 
         /// <summary>Bot icon as Slack emoji shortcode (e.g. ":robot_face:", ":warning:").</summary>
         public string? IconEmoji { get; set; }
+        
+        /// <summary>Bot avatar image URL. If set, sent as `icon_url` to Slack.</summary>
+        public string? AvatarUrl { get; set; }
     }
 
     public sealed class SlackConfig : ProviderConfigBase, IProviderSendOptions<SlackSendOptions>
@@ -38,16 +41,16 @@ public sealed class SlackProvider : NotificationProviderBase<SlackProvider.Slack
     protected override async Task SendInternalAsync(
         SlackConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         SlackSendOptions options)
     {
         var payload = new
         {
-            text = $"{Emoji(level)} {message}",
+            text = message,
             mrkdwn = options.ContentFormat == MessageContentFormat.Markdown,
             channel = options.Channel,
             username = options.Username,
-            icon_emoji = options.IconEmoji
+            icon_emoji = options.IconEmoji,
+            icon_url = options.AvatarUrl
         };
 
         var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);

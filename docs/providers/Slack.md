@@ -36,6 +36,7 @@ Use `SlackSendOptions` to customize individual messages:
 | Channel | `string?` | null | Override target channel (e.g. "#alerts") |
 | Username | `string?` | null | Override bot display name |
 | IconEmoji | `string?` | null | Bot icon emoji (e.g. ":warning:") |
+| AvatarUrl | `string?` | null | Bot avatar image URL; sent as `icon_url` to Slack (takes precedence over `IconEmoji`) |
 
 ## References
 

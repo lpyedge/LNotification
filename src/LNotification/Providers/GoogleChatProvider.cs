@@ -45,12 +45,12 @@ public sealed class GoogleChatProvider : NotificationProviderBase<GoogleChatProv
     protected override async Task SendInternalAsync(
         GoogleChatConfig config,
         string message,
-        NotificationService.NotifyLevel level,
+        
         GoogleChatSendOptions options)
     {
         var payload = new
         {
-            text = $"{Emoji(level)} {message}"
+            text = message
         };
 
         var url = BuildUrl(config.WebhookUrl, options);

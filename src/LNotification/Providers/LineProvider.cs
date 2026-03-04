@@ -30,7 +30,6 @@ public sealed class LineProvider : NotificationProviderBase<LineProvider.LineCon
     protected override async Task SendInternalAsync(
         LineConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         LineSendOptions options)
     {
         var text = options.ContentFormat == MessageContentFormat.Markdown
@@ -44,7 +43,7 @@ public sealed class LineProvider : NotificationProviderBase<LineProvider.LineCon
                 new
                 {
                     type = "text",
-                    text = $"{Emoji(level)} {text}"
+                    text = text
                 }
             }
         };

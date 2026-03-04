@@ -39,7 +39,6 @@ public sealed class MattermostProvider : NotificationProviderBase<MattermostProv
     protected override async Task SendInternalAsync(
         MattermostConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         MattermostSendOptions options)
     {
         var channel = options.Channel ?? config.Channel;
@@ -47,7 +46,7 @@ public sealed class MattermostProvider : NotificationProviderBase<MattermostProv
         var payload = new
         {
             channel = channel,
-            text = $"{Emoji(level)} {message}",
+            text = message,
             username = options.Username,
             icon_url = options.IconUrl
         };

@@ -6,8 +6,7 @@
 - Alias: optional string, defaults to "default"
 - ApplicationToken: Pushover application API token (required)
 - UserKey: Pushover user/group key (required)
-- Priority: message priority -2 to 2 (default 0)
-- Sound: optional notification sound name
+ 
 
 ## How to get tokens
 
@@ -16,14 +15,7 @@
 3. Go to https://pushover.net/apps/build → create an application → copy the API Token.
 
 ## Priority values
-
-| Value | Meaning |
-|-------|---------|
-| -2 | Lowest (no alert) |
-| -1 | Low (quiet) |
-| 0 | Normal (default) |
-| 1 | High (bypass quiet hours) |
-| 2 | Emergency (repeat until acknowledged) |
+Pushover supports 5 priority levels: Lowest(1), Low(2), Normal(3), High(4), and Emergency(5). The default is Normal(3).
 
 ## Example
 
@@ -32,8 +24,6 @@
   "Provider": "Pushover",
   "ApplicationToken": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
   "UserKey": "uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  "Priority": 0,
-  "Sound": "pushover"
 }
 ```
 
@@ -44,7 +34,7 @@ Use `PushoverSendOptions` to customize individual messages:
 | Property | Type | Default | Description |
 |---|---|---|---|
 | ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (`Markdown` is converted to HTML for Pushover) |
-| Priority | `PushoverPriority?` | null | `Lowest(-2)` / `Low(-1)` / `Normal(0)` / `High(1)` / `Emergency(2)` |
+| Priority | `int` | 3 | 1–5 where 1=min and 5=max; mapped to Pushover API values (-2..2) by the library |
 | Sound | `PushoverSound` | Default | 23 built-in sounds (e.g. `Siren`, `Magic`, `CashRegister`, `Vibrate`, `None`) |
 | Format | `PushoverMessageFormat` | PlainText | `PlainText` / `Html` / `Monospace` (used when ContentFormat is `PlainText`) |
 | Device | `string?` | null | Target specific device name |

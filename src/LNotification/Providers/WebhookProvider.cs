@@ -57,14 +57,13 @@ public sealed class WebhookProvider : NotificationProviderBase<WebhookProvider.W
     protected override async Task SendInternalAsync(
         WebhookConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         WebhookSendOptions options)
     {
         var client = HttpClientFactory.CreateClient(NotificationHttpClient);
         var contentType = ResolveContentType(options.ContentType);
         var request = new HttpRequestMessage(new HttpMethod(config.Method), config.Url)
         {
-            Content = BuildContent(config, message, level, contentType, options.ContentType)
+            Content = BuildContent(config, message, contentType, options.ContentType)
         };
 
         foreach (var header in config.Headers)
@@ -79,7 +78,6 @@ public sealed class WebhookProvider : NotificationProviderBase<WebhookProvider.W
     private static HttpContent BuildContent(
         WebhookConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         string contentType,
         WebhookContentType optionType)
     {
@@ -87,24 +85,23 @@ public sealed class WebhookProvider : NotificationProviderBase<WebhookProvider.W
         {
             var body = config.BodyTemplate!
                 .Replace("{message}", message)
-                .Replace("{level}", level.ToString());
+                .Replace("{level}", string.Empty);
 
             return new StringContent(body, Encoding.UTF8, contentType);
         }
 
-        var text = $"{Emoji(level)} {message}";
+        var text = message;
 
         return optionType switch
         {
-            WebhookContentType.Json => JsonContent.Create(new { text, level = level.ToString() }),
+            WebhookContentType.Json => JsonContent.Create(new { text }),
             WebhookContentType.FormUrlEncoded => new FormUrlEncodedContent(
                 new Dictionary<string, string?>
                 {
-                    ["text"] = text,
-                    ["level"] = level.ToString()
+                    ["text"] = text
                 }.Select(kv => new KeyValuePair<string?, string?>(kv.Key, kv.Value))),
             WebhookContentType.Xml => new StringContent(
-                $"<notification><level>{level}</level><text>{text}</text></notification>",
+                $"<notification><text>{text}</text></notification>",
                 Encoding.UTF8,
                 contentType),
             _ => new StringContent(text, Encoding.UTF8, contentType)

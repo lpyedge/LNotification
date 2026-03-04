@@ -14,7 +14,6 @@
 - To: list of recipient addresses
 - Cc: optional list of CC addresses
 - Bcc: optional list of BCC addresses
-- SubjectPrefix: subject prefix string
 
 ## How to get SMTP settings
 
@@ -41,7 +40,7 @@ provider's official documentation for exact values.
   "To": ["ops@example.com"],
   "Cc": ["dev@example.com"],
   "Bcc": ["audit@example.com"],
-  "SubjectPrefix": "[Notify]"
+  
 }
 ```
 
@@ -52,7 +51,7 @@ Use `EmailSendOptions` to customize individual messages:
 | Property | Type | Default | Description |
 |---|---|---|---|
 | ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` |
-| Subject | `string?` | null | Override email subject line |
+| Title | `string` | "Notification" | Override email title/subject line |
 | ReplyTo | `string?` | null | Reply-To email address |
 | BodyFormat | `EmailBodyFormat` | PlainText | `PlainText` / `Html` |
 
@@ -61,12 +60,12 @@ await service.SendAsync<EmailProvider, EmailProvider.EmailSendOptions>(
     "<b>Alert!</b> Server is down.",
     new EmailProvider.EmailSendOptions
     {
-        Subject = "Urgent: Server Down",
+        Title = "Urgent: Server Down",
         ReplyTo = "ops@example.com",
         BodyFormat = EmailBodyFormat.Html
     });
 ```
 
 ## References
-
+  
 - https://learn.microsoft.com/en-us/dotnet/api/system.net.mail.smtpclient

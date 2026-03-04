@@ -1,3 +1,4 @@
+using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -13,19 +14,16 @@ public sealed class GotifyProvider : NotificationProviderBase<GotifyProvider.Got
     /// </summary>
     public sealed class GotifySendOptions : SendOptions
     {
-        /// <summary>Custom notification title. Overrides default "[emoji] [level]".</summary>
-        public string? Title { get; set; }
-
-        /// <summary>Override message priority (0 = min, 10 = max).
-        /// 0: no notification. 1-3: low. 4-7: normal. 8-10: high.</summary>
-        public int? Priority { get; set; }
+        /// <summary>notification title.</summary>
+        public string Title { get; set; } = "Notification";
+        /// <summary>Override message priority (1-5, default 3).</summary>
+        public int? Priority { get; set; } = 3;
     }
 
     public sealed class GotifyConfig : ProviderConfigBase, IProviderSendOptions<GotifySendOptions>
     {
         public string ServerUrl { get; set; } = string.Empty;
         public string Token { get; set; } = string.Empty;
-        public int Priority { get; set; } = 5;
         public GotifySendOptions SendOptions { get; set; } = new();
     }
 
@@ -38,15 +36,16 @@ public sealed class GotifyProvider : NotificationProviderBase<GotifyProvider.Got
     protected override async Task SendInternalAsync(
         GotifyConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         GotifySendOptions options)
     {
         var url = $"{config.ServerUrl.TrimEnd('/')}/message?token={config.Token}";
+        var mapped = MapGotifyPriority(options.Priority);
+
         var payload = new
         {
-            title = options.Title ?? $"{Emoji(level)} [{level}]",
+            title = options.Title ?? "Notification",
             message = message,
-            priority = options.Priority ?? config.Priority,
+            priority = mapped,
             extras = options.ContentFormat == MessageContentFormat.Markdown
                 ? new { display = new { contentType = "text/markdown" } }
                 : null
@@ -55,5 +54,15 @@ public sealed class GotifyProvider : NotificationProviderBase<GotifyProvider.Got
         var client = HttpClientFactory.CreateClient(NotificationHttpClient);
         var response = await client.PostAsJsonAsync(url, payload);
         await EnsureSuccessAsync(response, config.Alias);
+    }
+
+    //1-5 mapped linearly to 0-10 for Gotify priority
+    private static int MapGotifyPriority(int? p)
+    {
+        // Expect p in 1..5, map linearly to 0..10
+        int priority = p ?? 3;
+        if (priority < 1) priority = 1;
+        if (priority > 5) priority = 5;
+        return (int)Math.Round((priority - 1) * 10.0 / 4.0);
     }
 }

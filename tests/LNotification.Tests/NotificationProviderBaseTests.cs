@@ -38,7 +38,6 @@ public class NotificationProviderBaseTests
         protected override Task SendInternalAsync(
             StubConfig config,
             string message,
-            NotificationService.NotifyLevel level,
             StubSendOptions options)
         {
             SendCalled = true;
@@ -59,7 +58,7 @@ public class NotificationProviderBaseTests
 
         var provider = new StubProvider(options);
 
-        var result = await provider.SendAsync("test", NotificationService.NotifyLevel.Info, null);
+        var result = await provider.SendAsync("test", null);
 
         Assert.False(result);
         Assert.False(provider.SendCalled);
@@ -79,7 +78,7 @@ public class NotificationProviderBaseTests
         var provider = new StubProvider(options);
 
         // Request a non-existent alias
-        var result = await provider.SendAsync("test", NotificationService.NotifyLevel.Info, "nonexistent");
+        var result = await provider.SendAsync("test", "nonexistent");
 
         Assert.False(result);
         Assert.False(provider.SendCalled);
@@ -98,7 +97,7 @@ public class NotificationProviderBaseTests
 
         var provider = new StubProvider(options);
 
-        var result = await provider.SendAsync("test", NotificationService.NotifyLevel.Info, null);
+        var result = await provider.SendAsync("test", null);
 
         Assert.True(result);
         Assert.True(provider.SendCalled);
@@ -117,7 +116,7 @@ public class NotificationProviderBaseTests
 
         var provider = new StubProvider(options);
 
-        var result = await provider.SendAsync("test", NotificationService.NotifyLevel.Info, null);
+        var result = await provider.SendAsync("test", null);
 
         // Disabled configs are filtered out in constructor, so result should be false
         Assert.False(result);
@@ -138,7 +137,7 @@ public class NotificationProviderBaseTests
 
         var provider = new StubProvider(options);
 
-        var result = await provider.SendAsync("test", NotificationService.NotifyLevel.Info, "prod");
+        var result = await provider.SendAsync("test", "prod");
 
         Assert.True(result);
         Assert.True(provider.SendCalled);
@@ -161,7 +160,7 @@ public class NotificationProviderBaseTests
 
         var provider = new StubProvider(options);
 
-        var result = await provider.SendAsync("test", NotificationService.NotifyLevel.Info, null);
+        var result = await provider.SendAsync("test", null);
 
         Assert.True(result);
         Assert.Same(defaultOptions, provider.LastOptions);
@@ -180,7 +179,7 @@ public class NotificationProviderBaseTests
 
         var provider = new StubProvider(options);
 
-        var result = await provider.SendAsync("test", NotificationService.NotifyLevel.Info, null);
+        var result = await provider.SendAsync("test", null);
 
         Assert.True(result);
         Assert.NotNull(provider.LastOptions);
@@ -201,7 +200,7 @@ public class NotificationProviderBaseTests
         var provider = new StubProvider(options);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            provider.SendAsync("test", NotificationService.NotifyLevel.Info, null, new OtherSendOptions()));
+            provider.SendAsync("test", null, new OtherSendOptions()));
     }
 
     [Fact]
@@ -221,7 +220,7 @@ public class NotificationProviderBaseTests
             ContentFormat = MessageContentFormat.Markdown
         };
 
-        var result = await provider.SendAsync("**markdown**", NotificationService.NotifyLevel.Info, null, requestOptions);
+        var result = await provider.SendAsync("**markdown**", null, requestOptions);
 
         Assert.True(result);
         Assert.Same(requestOptions, provider.LastOptions);

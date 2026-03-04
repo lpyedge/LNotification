@@ -40,7 +40,6 @@ public abstract class NotificationProviderBase
 
     public async Task<bool> SendAsync(
         string message,
-        NotificationService.NotifyLevel level,
         string? alias)
     {
         var config = ResolveConfig(alias);
@@ -50,12 +49,11 @@ public abstract class NotificationProviderBase
         }
 
         var defaultOptions = GetDefaultOptions(config);
-        return await SendCoreAsync(config, message, level, defaultOptions);
+        return await SendCoreAsync(config, message, defaultOptions);
     }
 
     public async Task<bool> SendAsync<TOptions>(
         string message,
-        NotificationService.NotifyLevel level,
         string? alias,
         TOptions options)
         where TOptions : SendOptions
@@ -78,7 +76,7 @@ public abstract class NotificationProviderBase
             return false;
         }
 
-        return await SendCoreAsync(config, message, level, options);
+        return await SendCoreAsync(config, message, options);
     }
 
     protected async Task RetryAsync(Func<Task> action)
@@ -117,7 +115,6 @@ public abstract class NotificationProviderBase
     protected abstract Task SendInternalAsync(
         ProviderConfigBase config,
         string message,
-        NotificationService.NotifyLevel level,
         SendOptions options);
 
     protected async Task EnsureSuccessAsync(HttpResponseMessage response, string? alias)
@@ -148,14 +145,13 @@ public abstract class NotificationProviderBase
     private async Task<bool> SendCoreAsync(
         ProviderConfigBase config,
         string message,
-        NotificationService.NotifyLevel level,
         SendOptions options)
     {
         try
         {
             await RetryAsync(async () =>
             {
-                await SendInternalAsync(config, message, level, options);
+                await SendInternalAsync(config, message, options);
             });
 
             Logger.LogInformation("{Provider}({Alias}) sent successfully",
@@ -167,10 +163,6 @@ public abstract class NotificationProviderBase
             Logger.LogError(ex, "{Provider}({Alias}) failed after retries",
                 GetType().Name, config.Alias);
 
-            if (level == NotificationService.NotifyLevel.Critical)
-            {
-                throw;
-            }
 
             return false;
         }
@@ -202,15 +194,6 @@ public abstract class NotificationProviderBase
         return _configs[0];
     }
 
-    protected static string Emoji(NotificationService.NotifyLevel level) => level switch
-    {
-        NotificationService.NotifyLevel.Success => "✅",
-        NotificationService.NotifyLevel.Info => "ℹ️",
-        NotificationService.NotifyLevel.Warning => "⚠️",
-        NotificationService.NotifyLevel.Error => "❌",
-        NotificationService.NotifyLevel.Critical => "🚨",
-        _ => "📢"
-    };
 }
 
 public abstract class NotificationProviderBase<TConfig, TOptions> :
@@ -237,15 +220,14 @@ public abstract class NotificationProviderBase<TConfig, TOptions> :
     protected sealed override Task SendInternalAsync(
         ProviderConfigBase config,
         string message,
-        NotificationService.NotifyLevel level,
         SendOptions options)
     {
-        return SendInternalAsync((TConfig)config, message, level, (TOptions)options);
+        return SendInternalAsync((TConfig)config, message, (TOptions)options);
     }
 
     protected abstract Task SendInternalAsync(
         TConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         TOptions options);
+
 }

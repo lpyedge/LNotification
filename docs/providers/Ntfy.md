@@ -7,7 +7,6 @@
 - ServerUrl: ntfy server URL (default "https://ntfy.sh")
 - Topic: ntfy topic name (required)
 - Token: optional access token for authentication
-- Priority: message priority 1–5 (default 3, where 1=min, 5=max)
 
 ## How to get Topic
 
@@ -26,7 +25,6 @@ For self-hosted ntfy, set ServerUrl to your instance URL.
   "ServerUrl": "https://ntfy.sh",
   "Topic": "my-alerts",
   "Token": "tk_xxxxxxxx",
-  "Priority": 4
 }
 ```
 
@@ -46,7 +44,7 @@ Use `NtfySendOptions` to customize individual messages:
 | Property | Type | Default | Description |
 |---|---|---|---|
 | ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (`Markdown` sends `Markdown: yes` header) |
-| Priority | `NtfyPriority?` | null | `Min(1)` / `Low(2)` / `Default(3)` / `High(4)` / `Urgent(5)` |
+| Priority | `int?` | 3 | 1–5 where 1=min and 5=max (default 3) |
 | Tags | `string?` | null | Comma-separated emoji tags (e.g. "warning,skull") |
 | ClickUrl | `string?` | null | URL opened on notification click |
 

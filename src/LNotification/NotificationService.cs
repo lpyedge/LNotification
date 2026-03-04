@@ -14,14 +14,6 @@ namespace LNotification;
 
 public sealed class NotificationService
 {
-    public enum NotifyLevel
-    {
-        Success,
-        Info,
-        Warning,
-        Error,
-        Critical
-    }
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILoggerFactory _loggerFactory;
@@ -45,19 +37,17 @@ public sealed class NotificationService
 
     public Task<bool> SendAsync<TProvider>(
         string message,
-        NotifyLevel level = NotifyLevel.Info,
         string? alias = null)
         where TProvider : NotificationProviderBase
     {
         var resolvedAlias = alias ?? "default";
         var provider = GetOrCreateProvider<TProvider>(resolvedAlias);
-        return provider.SendAsync(message, level, resolvedAlias);
+        return provider.SendAsync(message, resolvedAlias);
     }
 
     public Task<bool> SendAsync<TProvider, TOptions>(
         string message,
         TOptions options,
-        NotifyLevel level = NotifyLevel.Info,
         string? alias = null)
         where TProvider : NotificationProviderBase, INotificationProvider<TOptions>
         where TOptions : SendOptions
@@ -69,7 +59,7 @@ public sealed class NotificationService
 
         var resolvedAlias = alias ?? "default";
         var provider = GetOrCreateProvider<TProvider>(resolvedAlias);
-        return provider.SendAsync(message, level, resolvedAlias, options);
+        return provider.SendAsync(message, resolvedAlias, options);
     }
 
     private TProvider GetOrCreateProvider<TProvider>(string alias)

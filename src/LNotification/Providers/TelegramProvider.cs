@@ -53,11 +53,10 @@ public sealed class TelegramProvider : NotificationProviderBase<TelegramProvider
     protected override async Task SendInternalAsync(
         TelegramConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         TelegramSendOptions options)
     {
         var url = $"https://api.telegram.org/bot{config.BotToken}/sendMessage";
-        var payload = BuildPayload(config, message, level, options);
+        var payload = BuildPayload(config, message, options);
 
         var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
         var response = await client.PostAsJsonAsync(url, payload);
@@ -67,7 +66,6 @@ public sealed class TelegramProvider : NotificationProviderBase<TelegramProvider
     private static object BuildPayload(
         TelegramConfig config,
         string message,
-        NotificationService.NotifyLevel level,
         TelegramSendOptions options)
     {
         if (options.ContentFormat == MessageContentFormat.Markdown)
@@ -76,7 +74,7 @@ public sealed class TelegramProvider : NotificationProviderBase<TelegramProvider
             return new
             {
                 chat_id = config.ChatId,
-                text = $"{Emoji(level)} {safeMarkdown}",
+                text = safeMarkdown,
                 parse_mode = "MarkdownV2",
                 message_thread_id = options.MessageThreadId,
                 disable_notification = options.DisableNotification,
@@ -94,7 +92,7 @@ public sealed class TelegramProvider : NotificationProviderBase<TelegramProvider
         return new
         {
             chat_id = config.ChatId,
-            text = $"{Emoji(level)} {message}",
+            text = message,
             parse_mode = parseModeStr,
             message_thread_id = options.MessageThreadId,
             disable_notification = options.DisableNotification,
