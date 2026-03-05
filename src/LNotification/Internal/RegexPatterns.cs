@@ -121,7 +121,8 @@ internal static class RegexPatterns
 
         var text = markdown;
 
-        text = StripCodeBlockRegex().Replace(text, string.Empty);
+        // 保留 fenced code block 內文，僅移除 ``` 標記
+        text = StripCodeBlockRegex().Replace(text, "$1");
         text = StripInlineCodeRegex().Replace(text, "$1");
         text = StripBoldRegex1().Replace(text, "$1");
         text = StripBoldRegex2().Replace(text, "$1");
@@ -161,7 +162,7 @@ internal static class RegexPatterns
     }
 
 #if NET7_0_OR_GREATER
-    [GeneratedRegex(@"```[\s\S]*?```", RegexOptions.Singleline)]
+    [GeneratedRegex(@"```([\s\S]*?)```", RegexOptions.Singleline)]
     private static partial Regex StripCodeBlockRegex();
 
     [GeneratedRegex(@"`([^`]*)`")]
@@ -194,7 +195,7 @@ internal static class RegexPatterns
     [GeneratedRegex(@"^\s*\d+\.\s+", RegexOptions.Multiline)]
     private static partial Regex StripOrderedListRegex();
 
-    [GeneratedRegex(@"```[\s\S]*?```", RegexOptions.Singleline)]
+    [GeneratedRegex(@"```([\s\S]*?)```", RegexOptions.Singleline)]
     private static partial Regex HtmlCodeBlockRegex();
 
     [GeneratedRegex(@"`([^`]*)`")]
@@ -224,7 +225,7 @@ internal static class RegexPatterns
     [GeneratedRegex(@"\[(.*?)\]\((.*?)\)")]
     private static partial Regex HtmlLinkRegex();
 #else
-    private static readonly Regex _stripCodeBlockRegex = new(@"```[\s\S]*?```", RegexOptions.Singleline | RegexOptions.Compiled);
+    private static readonly Regex _stripCodeBlockRegex = new(@"```([\s\S]*?)```", RegexOptions.Singleline | RegexOptions.Compiled);
     private static readonly Regex _stripInlineCodeRegex = new(@"`([^`]*)`", RegexOptions.Compiled);
     private static readonly Regex _stripBoldRegex1 = new(@"\*\*(.*?)\*\*", RegexOptions.Compiled);
     private static readonly Regex _stripBoldRegex2 = new(@"__(.*?)__", RegexOptions.Compiled);
@@ -235,7 +236,7 @@ internal static class RegexPatterns
     private static readonly Regex _stripBlockquoteRegex = new(@"^\s{0,3}>\s?", RegexOptions.Multiline | RegexOptions.Compiled);
     private static readonly Regex _stripUnorderedListRegex = new(@"^\s*[-+*]\s+", RegexOptions.Multiline | RegexOptions.Compiled);
     private static readonly Regex _stripOrderedListRegex = new(@"^\s*\d+\.\s+", RegexOptions.Multiline | RegexOptions.Compiled);
-    private static readonly Regex _htmlCodeBlockRegex = new(@"```[\s\S]*?```", RegexOptions.Singleline | RegexOptions.Compiled);
+    private static readonly Regex _htmlCodeBlockRegex = new(@"```([\s\S]*?)```", RegexOptions.Singleline | RegexOptions.Compiled);
     private static readonly Regex _htmlInlineCodeRegex = new(@"`([^`]*)`", RegexOptions.Compiled);
     private static readonly Regex _htmlBoldRegex1 = new(@"\*\*(.*?)\*\*", RegexOptions.Compiled);
     private static readonly Regex _htmlBoldRegex2 = new(@"__(.*?)__", RegexOptions.Compiled);

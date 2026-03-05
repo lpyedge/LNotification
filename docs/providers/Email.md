@@ -39,8 +39,7 @@ provider's official documentation for exact values.
   "Password": "smtp-pass",
   "To": ["ops@example.com"],
   "Cc": ["dev@example.com"],
-  "Bcc": ["audit@example.com"],
-  
+  "Bcc": ["audit@example.com"]
 }
 ```
 
@@ -58,11 +57,11 @@ Use `EmailSendOptions` to customize individual messages:
 ```csharp
 await service.SendAsync<EmailProvider, EmailProvider.EmailSendOptions>(
     "<b>Alert!</b> Server is down.",
-    new EmailProvider.EmailSendOptions
+    o =>
     {
-        Title = "Urgent: Server Down",
-        ReplyTo = "ops@example.com",
-        BodyFormat = EmailBodyFormat.Html
+        o.Title = "Urgent: Server Down";
+        o.ReplyTo = "ops@example.com";
+        o.BodyFormat = EmailBodyFormat.Html;
     });
 ```
 

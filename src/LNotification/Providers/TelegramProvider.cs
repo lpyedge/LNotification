@@ -59,7 +59,7 @@ public sealed class TelegramProvider : NotificationProviderBase<TelegramProvider
         var payload = BuildPayload(config, message, options);
 
         var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(url, payload);
+        using var response = await client.PostAsJsonAsync(url, payload);
         await EnsureSuccessAsync(response, config.Alias);
     }
 

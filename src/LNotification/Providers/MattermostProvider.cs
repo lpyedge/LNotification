@@ -16,8 +16,11 @@ public sealed class MattermostProvider : NotificationProviderBase<MattermostProv
         /// <summary>Override the webhook bot display name for this message.</summary>
         public string? Username { get; set; }
 
-        /// <summary>Override the webhook bot avatar image URL.</summary>
-        public string? IconUrl { get; set; }
+        /// <summary>
+        /// Override the webhook bot avatar/icon image URL.
+        /// Sent as <c>icon_url</c> to Mattermost.
+        /// </summary>
+        public string? AvatarUrl { get; set; }
 
         /// <summary>Override target channel (e.g. "town-square", "off-topic").</summary>
         public string? Channel { get; set; }
@@ -48,11 +51,11 @@ public sealed class MattermostProvider : NotificationProviderBase<MattermostProv
             channel = channel,
             text = message,
             username = options.Username,
-            icon_url = options.IconUrl
+            icon_url = options.AvatarUrl
         };
 
         var client = HttpClientFactory.CreateClient(NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(config.WebhookUrl, payload);
+        using var response = await client.PostAsJsonAsync(config.WebhookUrl, payload);
         await EnsureSuccessAsync(response, config.Alias);
     }
 }

@@ -139,7 +139,7 @@ public sealed class PushoverProvider : NotificationProviderBase<PushoverProvider
         }
 
         var client = HttpClientFactory.CreateClient(NotificationHttpClient);
-        var response = await client.PostAsync(
+        using var response = await client.PostAsync(
             PushoverApiUrl,
             new FormUrlEncodedContent(payload.Select(kv => new KeyValuePair<string?, string?>(kv.Key, kv.Value))));
         await EnsureSuccessAsync(response, config.Alias);
@@ -235,15 +235,12 @@ public sealed class PushoverProvider : NotificationProviderBase<PushoverProvider
 
     private static int ResolvePriority(int? p)
     {
-        // Map 1-5 -> -2..2 for Pushover
-        return p switch
-        {
-            1 => -2,
-            2 => -1,
-            3 => 0,
-            4 => 1,
-            5 => 2,
-            _ => Math.Max(-2, Math.Min(2, p ?? 0))
-        };
+        // Pushover API priority is -2..2. We expose a consistent 1..5 scale.
+        var val = p ?? 3;
+        if (val < 1) val = 1;
+        if (val > 5) val = 5;
+
+        // 1->-2, 2->-1, 3->0, 4->1, 5->2
+        return val - 3;
     }
 }

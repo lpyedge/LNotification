@@ -40,20 +40,20 @@ var notifier = app.Services.GetRequiredService<NotificationService>();
 await notifier.SendAsync<SlackProvider>("Hello");
 await notifier.SendAsync<DiscordProvider, DiscordProvider.DiscordSendOptions>(
     "**Build OK**",
-    new DiscordProvider.DiscordSendOptions
+    o =>
     {
-        ContentFormat = MessageContentFormat.Markdown,
-        Username = "Build Bot"
+        o.ContentFormat = MessageContentFormat.Markdown;
+        o.Username = "Build Bot";
     });
 
 // Teams example with custom summary and theme color
 await notifier.SendAsync<TeamsProvider, TeamsProvider.TeamsSendOptions>(
   "Service started",
-  new TeamsProvider.TeamsSendOptions
+  o =>
   {
-    ContentFormat = MessageContentFormat.PlainText,
-    Summary = "Service Alert",
-    ThemeColor = System.Drawing.Color.FromArgb(0x28, 0xa7, 0x45)
+    o.ContentFormat = MessageContentFormat.PlainText;
+    o.Summary = "Service Alert";
+    o.ThemeColor = System.Drawing.Color.FromArgb(0x28, 0xa7, 0x45);
   });
 ```
 
@@ -101,8 +101,9 @@ Example snippet:
 You can select a specific provider configuration by passing the `alias` argument to
 `SendAsync`.
 
-By default, `SendOptions.ContentFormat` is `PlainText` for all providers. Set it to
-`Markdown` only when you need provider-specific markdown rendering.
+`SendOptions` are applied as: defaults -> config -> per-call. Per-call customization uses
+`Action<TOptions>`; the patch runs on a cloned copy, so config/defaults are never mutated.
+The effective default for `SendOptions.ContentFormat` is `PlainText`.
 
 ## License
 

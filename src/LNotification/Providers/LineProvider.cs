@@ -55,7 +55,7 @@ public sealed class LineProvider : NotificationProviderBase<LineProvider.LineCon
         };
         request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {config.ChannelAccessToken}");
 
-        var response = await client.SendAsync(request);
+        using var response = await client.SendAsync(request);
         await EnsureSuccessAsync(response, config.Alias);
     }
 }

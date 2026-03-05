@@ -55,7 +55,7 @@ public sealed class GoogleChatProvider : NotificationProviderBase<GoogleChatProv
 
         var url = BuildUrl(config.WebhookUrl, options);
         var client = HttpClientFactory.CreateClient(NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(url, payload);
+        using var response = await client.PostAsJsonAsync(url, payload);
         await EnsureSuccessAsync(response, config.Alias);
     }
 

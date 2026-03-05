@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -55,19 +56,19 @@ public abstract class NotificationProviderBase
     public async Task<bool> SendAsync<TOptions>(
         string message,
         string? alias,
-        TOptions options)
-        where TOptions : SendOptions
+        Action<TOptions> configure)
+        where TOptions : SendOptions, new()
     {
-        if (options == null)
+        if (configure == null)
         {
-            throw new ArgumentNullException(nameof(options));
+            throw new ArgumentNullException(nameof(configure));
         }
 
-        if (!SupportedSendOptionsType.IsInstanceOfType(options))
+        if (SupportedSendOptionsType != typeof(TOptions))
         {
             throw new ArgumentException(
-                $"Provider {GetType().Name} expects options type {SupportedSendOptionsType.Name}, but received {options.GetType().Name}.",
-                nameof(options));
+                $"Provider {GetType().Name} expects options type {SupportedSendOptionsType.Name}, but received {typeof(TOptions).Name}.",
+                nameof(configure));
         }
 
         var config = ResolveConfig(alias);
@@ -76,14 +77,22 @@ public abstract class NotificationProviderBase
             return false;
         }
 
-        return await SendCoreAsync(config, message, options);
+        // Clone config SendOptions for this send so per-call changes never mutate shared config state.
+        var baseOptions = (TOptions)GetDefaultOptions(config);
+        var effectiveOptions = CloneOptions(baseOptions);
+        configure(effectiveOptions);
+
+        return await SendCoreAsync(config, message, effectiveOptions);
     }
 
     protected async Task RetryAsync(Func<Task> action)
     {
         Exception? lastException = null;
 
-        for (var attempt = 0; attempt <= _maxRetries; attempt++)
+        var maxRetries = _maxRetries < 0 ? 0 : _maxRetries;
+        var retryDelayMs = _retryDelayMs < 0 ? 0 : _retryDelayMs;
+
+        for (var attempt = 0; attempt <= maxRetries; attempt++)
         {
             try
             {
@@ -94,13 +103,18 @@ public abstract class NotificationProviderBase
             {
                 lastException = ex;
 
-                if (attempt < _maxRetries)
+                if (attempt < maxRetries)
                 {
-                    var delay = _retryDelayMs * (int)Math.Pow(2, attempt);
+                    var shift = attempt > 30 ? 30 : attempt;
+                    var multiplier = 1L << shift;
+                    var delayLong = (long)retryDelayMs * multiplier;
+                    if (delayLong > int.MaxValue) delayLong = int.MaxValue;
+
+                    var delay = (int)delayLong;
 
                     Logger.LogWarning(ex,
                         "Attempt {Attempt}/{MaxRetries} failed, retrying in {Delay}ms",
-                        attempt + 1, _maxRetries, delay);
+                        attempt + 1, maxRetries, delay);
 
                     await Task.Delay(delay);
                 }
@@ -166,6 +180,30 @@ public abstract class NotificationProviderBase
 
             return false;
         }
+    }
+
+    private static TOptions CloneOptions<TOptions>(TOptions source)
+        where TOptions : SendOptions, new()
+    {
+        // Shallow clone is sufficient for current option shapes (primitives/strings/enums/structs).
+        var clone = new TOptions();
+
+        foreach (var prop in typeof(TOptions).GetProperties(BindingFlags.Instance | BindingFlags.Public))
+        {
+            if (!prop.CanRead || !prop.CanWrite)
+            {
+                continue;
+            }
+
+            if (prop.GetIndexParameters().Length != 0)
+            {
+                continue;
+            }
+
+            prop.SetValue(clone, prop.GetValue(source));
+        }
+
+        return clone;
     }
 
     private ProviderConfigBase? ResolveConfig(string? alias)

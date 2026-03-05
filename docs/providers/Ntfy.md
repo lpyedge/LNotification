@@ -24,7 +24,7 @@ For self-hosted ntfy, set ServerUrl to your instance URL.
   "Alias": "ops",
   "ServerUrl": "https://ntfy.sh",
   "Topic": "my-alerts",
-  "Token": "tk_xxxxxxxx",
+  "Token": "tk_xxxxxxxx"
 }
 ```
 
@@ -46,7 +46,7 @@ Use `NtfySendOptions` to customize individual messages:
 | ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (`Markdown` sends `Markdown: yes` header) |
 | Priority | `int?` | 3 | 1–5 where 1=min and 5=max (default 3) |
 | Tags | `string?` | null | Comma-separated emoji tags (e.g. "warning,skull") |
-| ClickUrl | `string?` | null | URL opened on notification click |
+| Url | `string?` | null | URL opened on notification click |
 
 ## References
 

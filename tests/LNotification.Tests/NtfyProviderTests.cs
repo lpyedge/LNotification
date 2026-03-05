@@ -84,13 +84,10 @@ public class NtfyProviderTests
 
         var provider = new NtfyProvider(factory, NullLogger<NtfyProvider>.Instance, options);
 
-        var result = await provider.SendAsync(
+        var result = await provider.SendAsync<NtfyProvider.NtfySendOptions>(
             "## markdown",
             "default",
-            new NtfyProvider.NtfySendOptions
-            {
-                ContentFormat = MessageContentFormat.Markdown
-            });
+            o => o.ContentFormat = MessageContentFormat.Markdown);
 
         Assert.True(result);
         Assert.NotNull(handler.LastRequest);

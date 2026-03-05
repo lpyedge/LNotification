@@ -12,7 +12,6 @@
 - To: list of recipient email addresses
 - Cc: optional list of CC addresses
 - Bcc: optional list of BCC addresses
-- SubjectPrefix: email subject prefix (default "[Notify]")
 - SaveToSentItems: save to Sent Items folder (default false)
 
 ## Azure AD setup
@@ -37,7 +36,9 @@
   "FromDisplayName": "System Notifier",
   "To": ["admin@company.com", "ops@company.com"],
   "Cc": ["manager@company.com"],
-  "SubjectPrefix": "[Alert]",
+  "SendOptions": {
+    "Title": "[Alert]"
+  },
   "SaveToSentItems": false
 }
 ```
@@ -56,7 +57,7 @@ Use `MsGraphEmailSendOptions` to customize individual messages:
 | Property | Type | Default | Description |
 |---|---|---|---|
 | ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (Markdown is converted to HTML) |
-| Subject | `string?` | null | Override email subject |
+| Title | `string` | "Notification" | Override email subject |
 | ReplyTo | `string?` | null | Reply-To address |
 | Importance | `EmailImportance` | Normal | `Low` / `Normal` / `High` |
 

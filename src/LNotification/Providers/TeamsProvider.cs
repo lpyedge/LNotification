@@ -17,7 +17,7 @@ public sealed class TeamsProvider : NotificationProviderBase<TeamsProvider.Teams
         /// <summary>Custom card activity title. Overrides default "[emoji] [level]".</summary>
         public string Title { get; set; } = "Notification";
         /// <summary>Card summary text. Defaults to "Notification".</summary>
-        public string Summary { get; set; } = "";
+        public string Summary { get; set; } = "Notification";
 
         /// <summary>Theme color for the card as a System.Drawing.Color. Defaults to #6c757d.</summary>
         public Color ThemeColor { get; set; } = Color.FromArgb(0x6c, 0x75, 0x7d);
@@ -62,7 +62,7 @@ public sealed class TeamsProvider : NotificationProviderBase<TeamsProvider.Teams
         };
 
         var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(config.WebhookUrl, payload);
+        using var response = await client.PostAsJsonAsync(config.WebhookUrl, payload);
         await EnsureSuccessAsync(response, config.Alias);
     }
 }

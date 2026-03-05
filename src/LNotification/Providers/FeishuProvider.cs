@@ -43,7 +43,7 @@ public sealed class FeishuProvider : NotificationProviderBase<FeishuProvider.Fei
         };
 
         var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(config.WebhookUrl, payload);
+        using var response = await client.PostAsJsonAsync(config.WebhookUrl, payload);
         await EnsureSuccessAsync(response, config.Alias);
     }
 }

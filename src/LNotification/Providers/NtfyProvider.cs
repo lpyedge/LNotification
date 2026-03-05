@@ -23,7 +23,7 @@ public sealed class NtfyProvider : NotificationProviderBase<NtfyProvider.NtfyCon
         public string? Tags { get; set; }
 
         /// <summary>URL to open when the notification is clicked.</summary>
-        public string? ClickUrl { get; set; }
+        public string? Url { get; set; }
     }
 
     public sealed class NtfyConfig : ProviderConfigBase, IProviderSendOptions<NtfySendOptions>
@@ -63,9 +63,9 @@ public sealed class NtfyProvider : NotificationProviderBase<NtfyProvider.NtfyCon
             request.Headers.TryAddWithoutValidation("Tags", options.Tags);
         }
 
-        if (!string.IsNullOrWhiteSpace(options.ClickUrl))
+        if (!string.IsNullOrWhiteSpace(options.Url))
         {
-            request.Headers.TryAddWithoutValidation("Click", options.ClickUrl);
+            request.Headers.TryAddWithoutValidation("Click", options.Url);
         }
 
         if (options.ContentFormat == MessageContentFormat.Markdown)
@@ -79,7 +79,7 @@ public sealed class NtfyProvider : NotificationProviderBase<NtfyProvider.NtfyCon
         }
 
         var client = HttpClientFactory.CreateClient(NotificationHttpClient);
-        var response = await client.SendAsync(request);
+        using var response = await client.SendAsync(request);
         await EnsureSuccessAsync(response, config.Alias);
     }
 

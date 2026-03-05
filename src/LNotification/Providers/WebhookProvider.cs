@@ -71,7 +71,7 @@ public sealed class WebhookProvider : NotificationProviderBase<WebhookProvider.W
             request.Headers.TryAddWithoutValidation(header.Key, header.Value);
         }
 
-        var response = await client.SendAsync(request);
+        using var response = await client.SendAsync(request);
         await EnsureSuccessAsync(response, config.Alias);
     }
 
@@ -81,11 +81,15 @@ public sealed class WebhookProvider : NotificationProviderBase<WebhookProvider.W
         string contentType,
         WebhookContentType optionType)
     {
+        // 根據 content type 決定是否需要對 message 進行 XML escaping，避免 XML 注入 / 非法 XML
+        var escapedForXml = System.Security.SecurityElement.Escape(message) ?? string.Empty;
+
         if (!string.IsNullOrWhiteSpace(config.BodyTemplate))
         {
-            var body = config.BodyTemplate!
-                .Replace("{message}", message)
-                .Replace("{level}", string.Empty);
+            var bodyTemplate = config.BodyTemplate!;
+            var body = optionType == WebhookContentType.Xml
+                ? bodyTemplate.Replace("{message}", escapedForXml).Replace("{level}", string.Empty)
+                : bodyTemplate.Replace("{message}", message).Replace("{level}", string.Empty);
 
             return new StringContent(body, Encoding.UTF8, contentType);
         }
@@ -101,7 +105,7 @@ public sealed class WebhookProvider : NotificationProviderBase<WebhookProvider.W
                     ["text"] = text
                 }.Select(kv => new KeyValuePair<string?, string?>(kv.Key, kv.Value))),
             WebhookContentType.Xml => new StringContent(
-                $"<notification><text>{text}</text></notification>",
+                $"<notification><text>{escapedForXml}</text></notification>",
                 Encoding.UTF8,
                 contentType),
             _ => new StringContent(text, Encoding.UTF8, contentType)

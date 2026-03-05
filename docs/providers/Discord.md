@@ -39,11 +39,11 @@ Use `DiscordSendOptions` to customize individual messages:
 ```csharp
 await service.SendAsync<DiscordProvider, DiscordProvider.DiscordSendOptions>(
     "msg",
-    new DiscordProvider.DiscordSendOptions
+    o =>
     {
-        ContentFormat = MessageContentFormat.Markdown,
-        Username = "Alert Bot",
-        Flags = DiscordMessageFlag.SuppressNotifications
+        o.ContentFormat = MessageContentFormat.Markdown;
+        o.Username = "Alert Bot";
+        o.Flags = DiscordMessageFlag.SuppressNotifications;
     });
 ```
 

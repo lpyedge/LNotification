@@ -164,6 +164,7 @@ public class NotificationProviderBaseTests
 
         Assert.True(result);
         Assert.Same(defaultOptions, provider.LastOptions);
+        Assert.Equal(MessageContentFormat.Markdown, provider.LastOptions!.ContentFormat);
     }
 
     [Fact]
@@ -200,11 +201,11 @@ public class NotificationProviderBaseTests
         var provider = new StubProvider(options);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            provider.SendAsync("test", null, new OtherSendOptions()));
+            provider.SendAsync("test", null, (OtherSendOptions o) => { }));
     }
 
     [Fact]
-    public async Task SendAsync_WithTypedOptions_UsesProvidedMarkdownContentFormat()
+    public async Task SendAsync_WithPerCallPatch_ClonesConfigOptions_AndAppliesOverrides()
     {
         var config = new StubConfig { Alias = "default", Enabled = true };
         var options = new NotificationOptions
@@ -215,15 +216,16 @@ public class NotificationProviderBaseTests
         options.Providers.Add(config);
 
         var provider = new StubProvider(options);
-        var requestOptions = new StubSendOptions
-        {
-            ContentFormat = MessageContentFormat.Markdown
-        };
 
-        var result = await provider.SendAsync("**markdown**", null, requestOptions);
+        var result = await provider.SendAsync<StubSendOptions>(
+            "**markdown**",
+            null,
+            o => o.ContentFormat = MessageContentFormat.Markdown);
 
         Assert.True(result);
-        Assert.Same(requestOptions, provider.LastOptions);
+        Assert.NotNull(provider.LastOptions);
+        Assert.NotSame(config.SendOptions, provider.LastOptions);
+        Assert.Equal(MessageContentFormat.PlainText, config.SendOptions.ContentFormat);
         Assert.Equal(MessageContentFormat.Markdown, provider.LastOptions!.ContentFormat);
     }
 

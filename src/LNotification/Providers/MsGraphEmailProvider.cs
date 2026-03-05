@@ -44,7 +44,7 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase<MsGraphEmail
     public sealed class MsGraphEmailSendOptions : SendOptions
     {
         /// <summary>Override email title (subject line).</summary>
-        public string? Title { get; set; }
+        public string Title { get; set; } = "Notification";
 
         /// <summary>Reply-To email address.</summary>
         public string? ReplyTo { get; set; }
@@ -103,7 +103,7 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase<MsGraphEmail
         string message,
         MsGraphEmailSendOptions options)
     {
-        var subject = options.Title ?? string.Empty;
+        var subject = options.Title;
 
         if (options.ContentFormat == MessageContentFormat.Markdown)
         {
@@ -213,7 +213,7 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase<MsGraphEmail
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var response = await client.SendAsync(request);
+        using var response = await client.SendAsync(request);
         await EnsureSuccessAsync(response, config.Alias);
     }
 
@@ -244,7 +244,7 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase<MsGraphEmail
             };
 
             var httpClient = HttpClientFactory.CreateClient(NotificationHttpClient);
-            var response = await httpClient.PostAsync(
+            using var response = await httpClient.PostAsync(
                 tokenUrl,
                 new FormUrlEncodedContent(tokenPayload.Select(kv => new KeyValuePair<string?, string?>(kv.Key, kv.Value))));
 

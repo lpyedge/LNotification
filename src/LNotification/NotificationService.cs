@@ -12,7 +12,7 @@ using LNotification.Internal;
 
 namespace LNotification;
 
-public sealed class NotificationService
+public sealed class NotificationService : IDisposable
 {
 
     private readonly IHttpClientFactory _httpClientFactory;
@@ -20,8 +20,8 @@ public sealed class NotificationService
     private readonly NotificationConfiguration _configuration;
     private readonly object _optionsLock = new();
     private NotificationOptions _options;
-    private IChangeToken _reloadToken;
-    private readonly ConcurrentDictionary<(Type, string), NotificationProviderBase> _providerCache = new();
+    private ConcurrentDictionary<(Type, string), NotificationProviderBase> _providerCache = new();
+    private readonly IDisposable _reloadSubscription;
 
     internal NotificationService(
         IHttpClientFactory httpClientFactory,
@@ -32,7 +32,10 @@ public sealed class NotificationService
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _options = NotificationOptionsBinder.Bind(configuration.Configuration);
-        _reloadToken = configuration.Configuration.GetReloadToken();
+
+        _reloadSubscription = ChangeToken.OnChange(
+            () => _configuration.Configuration.GetReloadToken(),
+            ReloadOptions);
     }
 
     public Task<bool> SendAsync<TProvider>(
@@ -47,32 +50,33 @@ public sealed class NotificationService
 
     public Task<bool> SendAsync<TProvider, TOptions>(
         string message,
-        TOptions options,
+        Action<TOptions> configure,
         string? alias = null)
         where TProvider : NotificationProviderBase, INotificationProvider<TOptions>
-        where TOptions : SendOptions
+        where TOptions : SendOptions, new()
     {
-        if (options == null)
+        if (configure == null)
         {
-            throw new ArgumentNullException(nameof(options));
+            throw new ArgumentNullException(nameof(configure));
         }
 
         var resolvedAlias = alias ?? "default";
         var provider = GetOrCreateProvider<TProvider>(resolvedAlias);
-        return provider.SendAsync(message, resolvedAlias, options);
+        return provider.SendAsync(message, resolvedAlias, configure);
     }
 
     private TProvider GetOrCreateProvider<TProvider>(string alias)
         where TProvider : NotificationProviderBase
     {
-        var options = GetOptions();
         var key = (typeof(TProvider), alias);
-        
-        if (_providerCache.TryGetValue(key, out var cachedProvider) && cachedProvider is TProvider typedProvider)
+        var cache = System.Threading.Volatile.Read(ref _providerCache);
+
+        if (cache.TryGetValue(key, out var cachedProvider) && cachedProvider is TProvider typedProvider)
         {
             return typedProvider;
         }
 
+        var options = GetOptions();
         var logger = _loggerFactory.CreateLogger<TProvider>();
         var newProvider = (TProvider)Activator.CreateInstance(
             typeof(TProvider),
@@ -81,34 +85,37 @@ public sealed class NotificationService
             args: new object[] { _httpClientFactory, logger, options },
             culture: null)!;
 
-        _providerCache[key] = newProvider;
+        if (cache.TryAdd(key, newProvider))
+        {
+            return newProvider;
+        }
+
+        if (cache.TryGetValue(key, out var existingProvider) && existingProvider is TProvider existingTyped)
+        {
+            return existingTyped;
+        }
+
         return newProvider;
     }
 
     private NotificationOptions GetOptions()
     {
-        var currentToken = _reloadToken;
-        if (!currentToken.HasChanged)
-        {
-            return _options;
-        }
+        return System.Threading.Volatile.Read(ref _options);
+    }
 
+    private void ReloadOptions()
+    {
         lock (_optionsLock)
         {
-            // 重新检查,因为其他线程可能已经更新
-            if (_reloadToken == currentToken && currentToken.HasChanged)
-            {
-                var newOptions = NotificationOptionsBinder.Bind(_configuration.Configuration);
-                var newToken = _configuration.Configuration.GetReloadToken();
-                
-                // 先清空缓存,再更新配置
-                _providerCache.Clear();
-                _options = newOptions;
-                _reloadToken = newToken;
-            }
-            
-            return _options;
+            var newOptions = NotificationOptionsBinder.Bind(_configuration.Configuration);
+            System.Threading.Volatile.Write(ref _options, newOptions);
+            System.Threading.Volatile.Write(ref _providerCache, new ConcurrentDictionary<(Type, string), NotificationProviderBase>());
         }
+    }
+
+    void IDisposable.Dispose()
+    {
+        _reloadSubscription.Dispose();
     }
 
     public static IServiceCollection AddLNotification(

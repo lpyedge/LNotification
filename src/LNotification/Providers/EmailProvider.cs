@@ -31,8 +31,6 @@ public sealed class EmailProvider : NotificationProviderBase<EmailProvider.Email
         /// <summary>Reply-To email address.</summary>
         public string? ReplyTo { get; set; }
 
-        
-
         /// <summary>Body format for plain text content. Ignored when ContentFormat is Markdown.</summary>
         public EmailBodyFormat BodyFormat { get; set; } = EmailBodyFormat.PlainText;
     }
@@ -52,8 +50,6 @@ public sealed class EmailProvider : NotificationProviderBase<EmailProvider.Email
         public List<string> To { get; set; } = new();
         public List<string>? Cc { get; set; }
         public List<string>? Bcc { get; set; }
-
-        
 
         public EmailSendOptions SendOptions { get; set; } = new();
     }
@@ -125,7 +121,7 @@ public sealed class EmailProvider : NotificationProviderBase<EmailProvider.Email
         {
             foreach (var bcc in config.Bcc)
             {
-                mailMessage.Bcc.Add(bcc);
+                if (!string.IsNullOrWhiteSpace(bcc)) mailMessage.Bcc.Add(bcc);
             }
         }
 

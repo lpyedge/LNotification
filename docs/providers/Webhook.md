@@ -7,7 +7,7 @@
 - Url: target HTTP endpoint URL
 - Method: HTTP method (default "POST")
 - Headers: dictionary of custom HTTP headers
-- BodyTemplate: optional custom body template, supports `{message}` and `{level}` placeholders. If omitted, sends `{"text":"<emoji> <message>"}`
+- BodyTemplate: optional custom body template, supports `{message}` placeholder. If omitted, sends `{"text":"<message>"}`
 
 ## Usage notes
 
@@ -17,7 +17,6 @@ that accepts HTTP requests — CI/CD pipelines, custom APIs, automation platform
 
 In BodyTemplate you can use:
 - `{message}` — replaced with the notification message
-- `{level}` — replaced with the level name (Success, Info, Warning, Error, Critical)
 
 ## Example
 

@@ -14,7 +14,7 @@ public sealed class GotifyProvider : NotificationProviderBase<GotifyProvider.Got
     /// </summary>
     public sealed class GotifySendOptions : SendOptions
     {
-        /// <summary>notification title.</summary>
+        /// <summary>Notification title.</summary>
         public string Title { get; set; } = "Notification";
         /// <summary>Override message priority (1-5, default 3).</summary>
         public int? Priority { get; set; } = 3;
@@ -43,7 +43,7 @@ public sealed class GotifyProvider : NotificationProviderBase<GotifyProvider.Got
 
         var payload = new
         {
-            title = options.Title ?? "Notification",
+            title = options.Title,
             message = message,
             priority = mapped,
             extras = options.ContentFormat == MessageContentFormat.Markdown
@@ -52,7 +52,7 @@ public sealed class GotifyProvider : NotificationProviderBase<GotifyProvider.Got
         };
 
         var client = HttpClientFactory.CreateClient(NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(url, payload);
+        using var response = await client.PostAsJsonAsync(url, payload);
         await EnsureSuccessAsync(response, config.Alias);
     }
 

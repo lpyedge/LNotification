@@ -40,7 +40,7 @@ Use `MattermostSendOptions` to customize individual messages:
 |---|---|---|---|
 | ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` |
 | Username | `string?` | null | Override bot display name |
-| IconUrl | `string?` | null | Override bot avatar URL |
+| AvatarUrl | `string?` | null | Override bot avatar/icon URL (sent as `icon_url`) |
 | Channel | `string?` | null | Override target channel |
 
 ## References

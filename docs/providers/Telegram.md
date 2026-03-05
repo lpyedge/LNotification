@@ -47,10 +47,10 @@ Use `TelegramSendOptions` to customize individual messages:
 ```csharp
 await service.SendAsync<TelegramProvider, TelegramProvider.TelegramSendOptions>(
     "msg",
-    new TelegramProvider.TelegramSendOptions
+    o =>
     {
-        MessageThreadId = 42,
-        ContentFormat = MessageContentFormat.Markdown
+        o.MessageThreadId = 42;
+        o.ContentFormat = MessageContentFormat.Markdown;
     });
 ```
 

@@ -32,7 +32,7 @@ Use `TeamsSendOptions` to customize individual messages:
 | Property | Type | Default | Description |
 |---|---|---|---|
 | ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (Markdown is stripped to plain text for Teams cards) |
-| Title | `string` | null | Custom message card title |
+| Title | `string` | "Notification" | Custom message card title |
 | Summary | `string` | "Notification" | Short text summary for the message card |
 | ThemeColor | `System.Drawing.Color` | `#6c757d` | Card theme color (use `ColorTranslator.FromHtml("#rrggbb")` to set) |
 

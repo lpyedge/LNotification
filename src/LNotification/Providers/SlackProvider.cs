@@ -54,7 +54,7 @@ public sealed class SlackProvider : NotificationProviderBase<SlackProvider.Slack
         };
 
         var client = HttpClientFactory.CreateClient(NotificationProviderBase.NotificationHttpClient);
-        var response = await client.PostAsJsonAsync(config.WebhookUrl, payload);
+        using var response = await client.PostAsJsonAsync(config.WebhookUrl, payload);
         await EnsureSuccessAsync(response, config.Alias);
     }
 }
