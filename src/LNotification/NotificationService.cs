@@ -134,7 +134,8 @@ public sealed class NotificationService : IDisposable
         {
             var options = NotificationOptionsBinder.Bind(
                 sp.GetRequiredService<NotificationConfiguration>().Configuration);
-            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+            var timeoutSeconds = options.TimeoutSeconds <= 0 ? 30 : options.TimeoutSeconds;
+            client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
         });
 
         services.AddSingleton<NotificationService>();

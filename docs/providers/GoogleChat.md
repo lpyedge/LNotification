@@ -32,7 +32,7 @@ Use `GoogleChatSendOptions` to customize individual messages:
 |---|---|---|---|
 | ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (message text is sent as-is) |
 | ThreadKey | `string?` | null | Thread key for grouping messages |
-| ReplyOption | `GoogleChatReplyOption` | FallbackToNewThread | `FallbackToNewThread` / `ForceNewThread` |
+| ReplyOption | `GoogleChatReplyOption` | FallbackToNewThread | `FallbackToNewThread` replies when thread exists, otherwise creates one. `ForceNewThread` appends a unique suffix to `ThreadKey` and always starts a new thread. |
 
 ## References
 

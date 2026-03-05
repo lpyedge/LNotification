@@ -7,7 +7,7 @@
 - Url: target HTTP endpoint URL
 - Method: HTTP method (default "POST")
 - Headers: dictionary of custom HTTP headers
-- BodyTemplate: optional custom body template, supports `{message}` placeholder. If omitted, sends `{"text":"<message>"}`
+- BodyTemplate: optional custom body template, supports `{message}` and `{level}` placeholders. `{level}` is currently replaced with an empty string. If omitted, sends `{"text":"<message>"}`
 
 ## Usage notes
 
@@ -17,6 +17,9 @@ that accepts HTTP requests — CI/CD pipelines, custom APIs, automation platform
 
 In BodyTemplate you can use:
 - `{message}` — replaced with the notification message
+- `{level}` — currently replaced with an empty string
+
+When `ContentType=Json`, `{message}` is escaped as a JSON string value.
 
 ## Example
 
@@ -49,5 +52,5 @@ Use `WebhookSendOptions` to customize individual messages:
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (affects default payload text when no `BodyTemplate`) |
+| ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (no provider-side content transformation) |
 | ContentType | `WebhookContentType` | Json | `Json` / `Xml` / `FormUrlEncoded` / `PlainText` |

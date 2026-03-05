@@ -26,6 +26,9 @@ public sealed class NotificationOptions
 
 internal static class NotificationOptionsBinder
 {
+    private const int DefaultTimeoutSeconds = 30;
+    private const int MaxTimeoutSeconds = int.MaxValue / 1000;
+
     private static readonly Type[] ConfigTypes = Assembly.GetExecutingAssembly()
         .GetTypes()
         .Where(t => t.IsClass && !t.IsAbstract && t.IsSubclassOf(typeof(ProviderConfigBase)))
@@ -40,9 +43,15 @@ internal static class NotificationOptionsBinder
             return options;
         }
 
-        options.MaxRetries = lNotificationSection.GetValue<int?>("MaxRetries") ?? options.MaxRetries;
-        options.RetryDelayMs = lNotificationSection.GetValue<int?>("RetryDelayMs") ?? options.RetryDelayMs;
-        options.TimeoutSeconds = lNotificationSection.GetValue<int?>("TimeoutSeconds") ?? options.TimeoutSeconds;
+        options.MaxRetries = NormalizeNonNegative(
+            lNotificationSection.GetValue<int?>("MaxRetries"),
+            options.MaxRetries);
+        options.RetryDelayMs = NormalizeNonNegative(
+            lNotificationSection.GetValue<int?>("RetryDelayMs"),
+            options.RetryDelayMs);
+        options.TimeoutSeconds = NormalizeTimeoutSeconds(
+            lNotificationSection.GetValue<int?>("TimeoutSeconds"),
+            options.TimeoutSeconds);
 
         var providersSection = lNotificationSection.GetSection("Providers");
         foreach (var providerSection in providersSection.GetChildren())
@@ -79,20 +88,50 @@ internal static class NotificationOptionsBinder
 
     private static Type? FindConfigType(string providerKey)
     {
-        // 规范化：移除"Provider"后缀
-#if NETSTANDARD2_0
-        var normalized = providerKey.Replace("Provider", "").Replace("Config", "");
-        
-        // 查找匹配的Config类型（例如：Slack → SlackConfig）
-        return ConfigTypes.FirstOrDefault(t =>
-            t.Name.Equals($"{normalized}Config", StringComparison.OrdinalIgnoreCase));
-#else
-        var normalized = providerKey.Replace("Provider", "", StringComparison.OrdinalIgnoreCase)
-            .Replace("Config", "", StringComparison.OrdinalIgnoreCase);
+        var normalized = TrimKnownSuffix(providerKey, "Provider");
+        normalized = TrimKnownSuffix(normalized, "Config");
 
-        // 查找匹配的Config类型（例如：Slack → SlackConfig）
         return ConfigTypes.FirstOrDefault(t =>
             t.Name.Equals($"{normalized}Config", StringComparison.OrdinalIgnoreCase));
-#endif
+    }
+
+    private static int NormalizeNonNegative(int? value, int fallback)
+    {
+        if (!value.HasValue)
+        {
+            return fallback;
+        }
+
+        return value.Value < 0 ? 0 : value.Value;
+    }
+
+    private static int NormalizeTimeoutSeconds(int? value, int fallback)
+    {
+        if (!value.HasValue)
+        {
+            return fallback;
+        }
+
+        if (value.Value <= 0)
+        {
+            return DefaultTimeoutSeconds;
+        }
+
+        if (value.Value > MaxTimeoutSeconds)
+        {
+            return MaxTimeoutSeconds;
+        }
+
+        return value.Value;
+    }
+
+    private static string TrimKnownSuffix(string value, string suffix)
+    {
+        if (value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+        {
+            return value.Substring(0, value.Length - suffix.Length);
+        }
+
+        return value;
     }
 }

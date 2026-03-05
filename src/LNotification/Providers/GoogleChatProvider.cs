@@ -12,7 +12,7 @@ public enum GoogleChatReplyOption
 {
     /// <summary>If threadKey matches an existing thread, reply to it; otherwise create a new thread.</summary>
     FallbackToNewThread,
-    /// <summary>Always create a new thread regardless of threadKey.</summary>
+    /// <summary>Always create a new thread by appending a unique suffix to ThreadKey.</summary>
     ForceNewThread
 }
 
@@ -45,7 +45,6 @@ public sealed class GoogleChatProvider : NotificationProviderBase<GoogleChatProv
     protected override async Task SendInternalAsync(
         GoogleChatConfig config,
         string message,
-        
         GoogleChatSendOptions options)
     {
         var payload = new
@@ -67,10 +66,21 @@ public sealed class GoogleChatProvider : NotificationProviderBase<GoogleChatProv
         }
 
         var separator = webhookUrl.Contains("?") ? "&" : "?";
-        var replyOption = o.ReplyOption == GoogleChatReplyOption.ForceNewThread
-            ? "REPLY_MESSAGE_OR_FAIL"
-            : "REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD";
+        var threadKey = o.ThreadKey;
+        string? replyOption = "REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD";
 
-        return $"{webhookUrl}{separator}threadKey={Uri.EscapeDataString(o.ThreadKey)}&messageReplyOption={replyOption}";
+        if (o.ReplyOption == GoogleChatReplyOption.ForceNewThread)
+        {
+            threadKey = $"{o.ThreadKey}-{Guid.NewGuid():N}";
+            replyOption = null;
+        }
+
+        var query = $"threadKey={Uri.EscapeDataString(threadKey)}";
+        if (!string.IsNullOrWhiteSpace(replyOption))
+        {
+            query = $"{query}&messageReplyOption={replyOption}";
+        }
+
+        return $"{webhookUrl}{separator}{query}";
     }
 }

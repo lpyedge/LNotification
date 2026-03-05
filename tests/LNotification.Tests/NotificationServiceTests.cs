@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using LNotification;
 using LNotification.Internal;
@@ -107,6 +108,27 @@ public class NotificationServiceTests
             .Any(m => m.Name == "SendMarkdownAsync");
 
         Assert.False(hasSendMarkdownAsync);
+    }
+
+    [Fact]
+    public void AddLNotification_ZeroTimeout_UsesDefaultTimeout()
+    {
+        var configData = new ConfigurationBuilder()
+            .AddInMemoryCollection(new[]
+            {
+                new System.Collections.Generic.KeyValuePair<string, string?>(
+                    "LNotification:TimeoutSeconds", "0")
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        NotificationService.AddLNotification(services, configData);
+
+        using var provider = services.BuildServiceProvider();
+        var factory = provider.GetRequiredService<IHttpClientFactory>();
+        var client = factory.CreateClient(NotificationProviderBase.NotificationHttpClient);
+
+        Assert.Equal(TimeSpan.FromSeconds(30), client.Timeout);
     }
 }
 

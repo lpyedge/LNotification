@@ -23,7 +23,7 @@ Pushover supports 5 priority levels: Lowest(1), Low(2), Normal(3), High(4), and 
 {
   "Provider": "Pushover",
   "ApplicationToken": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  "UserKey": "uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "UserKey": "uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 }
 ```
 
@@ -34,7 +34,7 @@ Use `PushoverSendOptions` to customize individual messages:
 | Property | Type | Default | Description |
 |---|---|---|---|
 | ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` (`Markdown` is converted to HTML for Pushover) |
-| Priority | `int` | 3 | 1–5 where 1=min and 5=max; mapped to Pushover API values (-2..2) by the library |
+| Priority | `int?` | 3 | 1–5 where 1=min and 5=max; mapped to Pushover API values (-2..2) by the library |
 | Sound | `PushoverSound` | Default | 23 built-in sounds (e.g. `Siren`, `Magic`, `CashRegister`, `Vibrate`, `None`) |
 | Format | `PushoverMessageFormat` | PlainText | `PlainText` / `Html` / `Monospace` (used when ContentFormat is `PlainText`) |
 | Device | `string?` | null | Target specific device name |

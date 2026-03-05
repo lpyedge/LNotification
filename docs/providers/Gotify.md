@@ -20,7 +20,7 @@
   "Provider": "Gotify",
   "Alias": "homelab",
   "ServerUrl": "https://gotify.my-server.com",
-  "Token": "A_xxxxxxxx",
+  "Token": "A_xxxxxxxx"
 }
 ```
 
@@ -35,7 +35,7 @@ Use `GotifySendOptions` to customize individual messages:
 | Property | Type | Default | Description |
 |---|---|---|---|
 | ContentFormat | `MessageContentFormat` | PlainText | `PlainText` / `Markdown` |
-| Title | `string?` | null | Custom notification title |
+| Title | `string` | "Notification" | Custom notification title |
 | Priority | `int?` | 3 | Priority 1–5 (1=min, 5=max). Note: the library maps 1–5 to Gotify API 0–10 (1→0, 5→10) |
 
 ## References

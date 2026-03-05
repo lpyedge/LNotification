@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using LNotification.Internal;
@@ -81,15 +82,21 @@ public sealed class WebhookProvider : NotificationProviderBase<WebhookProvider.W
         string contentType,
         WebhookContentType optionType)
     {
-        // 根據 content type 決定是否需要對 message 進行 XML escaping，避免 XML 注入 / 非法 XML
         var escapedForXml = System.Security.SecurityElement.Escape(message) ?? string.Empty;
+        var escapedForJson = EscapeJsonString(message);
 
         if (!string.IsNullOrWhiteSpace(config.BodyTemplate))
         {
             var bodyTemplate = config.BodyTemplate!;
-            var body = optionType == WebhookContentType.Xml
-                ? bodyTemplate.Replace("{message}", escapedForXml).Replace("{level}", string.Empty)
-                : bodyTemplate.Replace("{message}", message).Replace("{level}", string.Empty);
+            var messageValue = optionType switch
+            {
+                WebhookContentType.Xml => escapedForXml,
+                WebhookContentType.Json => escapedForJson,
+                _ => message
+            };
+            var body = bodyTemplate
+                .Replace("{message}", messageValue)
+                .Replace("{level}", string.Empty);
 
             return new StringContent(body, Encoding.UTF8, contentType);
         }
@@ -110,6 +117,14 @@ public sealed class WebhookProvider : NotificationProviderBase<WebhookProvider.W
                 contentType),
             _ => new StringContent(text, Encoding.UTF8, contentType)
         };
+    }
+
+    private static string EscapeJsonString(string value)
+    {
+        var serialized = JsonSerializer.Serialize(value);
+        return serialized.Length >= 2
+            ? serialized.Substring(1, serialized.Length - 2)
+            : string.Empty;
     }
 
     private static string ResolveContentType(WebhookContentType ct) => ct switch

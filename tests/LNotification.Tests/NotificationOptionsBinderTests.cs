@@ -124,4 +124,70 @@ public class NotificationOptionsBinderTests
         Assert.Single(options.Providers);
         Assert.Equal("default", options.Providers[0].Alias);
     }
+
+    [Fact]
+    public void Bind_ProviderNameCaseInsensitive_WithSuffix_BindsConfig()
+    {
+        var settings = new Dictionary<string, string?>
+        {
+            ["LNotification:Providers:0:Provider"] = "slackprovider",
+            ["LNotification:Providers:0:WebhookUrl"] = "https://example.com/webhook"
+        };
+
+        var config = TestConfigurationSection.FromDictionary(settings);
+
+        var options = NotificationOptionsBinder.Bind(config);
+
+        Assert.Single(options.Providers);
+        Assert.IsType<SlackProvider.SlackConfig>(options.Providers[0]);
+    }
+
+    [Fact]
+    public void Bind_NegativeRetrySettings_ClampedToZero()
+    {
+        var settings = new Dictionary<string, string?>
+        {
+            ["LNotification:MaxRetries"] = "-9",
+            ["LNotification:RetryDelayMs"] = "-500"
+        };
+
+        var config = TestConfigurationSection.FromDictionary(settings);
+
+        var options = NotificationOptionsBinder.Bind(config);
+
+        Assert.Equal(0, options.MaxRetries);
+        Assert.Equal(0, options.RetryDelayMs);
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("-1")]
+    public void Bind_InvalidTimeoutSeconds_UsesDefault(string timeoutValue)
+    {
+        var settings = new Dictionary<string, string?>
+        {
+            ["LNotification:TimeoutSeconds"] = timeoutValue
+        };
+
+        var config = TestConfigurationSection.FromDictionary(settings);
+
+        var options = NotificationOptionsBinder.Bind(config);
+
+        Assert.Equal(30, options.TimeoutSeconds);
+    }
+
+    [Fact]
+    public void Bind_TimeoutSecondsTooLarge_IsCapped()
+    {
+        var settings = new Dictionary<string, string?>
+        {
+            ["LNotification:TimeoutSeconds"] = int.MaxValue.ToString()
+        };
+
+        var config = TestConfigurationSection.FromDictionary(settings);
+
+        var options = NotificationOptionsBinder.Bind(config);
+
+        Assert.Equal(int.MaxValue / 1000, options.TimeoutSeconds);
+    }
 }
