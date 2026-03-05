@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -259,19 +260,23 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase<MsGraphEmail
 
             var tokenResponse = await response.Content.ReadAsStringAsync();
 
-            // Simple JSON parsing without extra dependencies
-            var accessToken = ExtractJsonValue(tokenResponse, "access_token");
-            var expiresIn = ExtractJsonValue(tokenResponse, "expires_in");
+            using var doc = JsonDocument.Parse(tokenResponse);
+            var root = doc.RootElement;
 
-            if (string.IsNullOrEmpty(accessToken))
+            if (!root.TryGetProperty("access_token", out var accessTokenElement) ||
+                accessTokenElement.ValueKind != JsonValueKind.String)
             {
                 throw new InvalidOperationException("Failed to obtain access token from Azure AD");
             }
 
+            var accessToken = accessTokenElement.GetString();
+            var expiresInSeconds = root.TryGetProperty("expires_in", out var expiresInElement) &&
+                                   expiresInElement.TryGetInt32(out var seconds)
+                ? seconds
+                : 55 * 60; // default ~55 minutes
+
             _cachedToken = accessToken;
-            _tokenExpiry = int.TryParse(expiresIn, out var seconds)
-                ? DateTime.UtcNow.AddSeconds(seconds)
-                : DateTime.UtcNow.AddMinutes(55); // Default ~1 hour
+            _tokenExpiry = DateTime.UtcNow.AddSeconds(expiresInSeconds);
 
             Logger.LogDebug("MsGraphEmail token acquired, expires at {Expiry}", _tokenExpiry);
             return accessToken!;
@@ -282,42 +287,4 @@ public sealed class MsGraphEmailProvider : NotificationProviderBase<MsGraphEmail
         }
     }
 
-    /// <summary>
-    /// Minimal JSON value extractor — avoids dependency on System.Text.Json or Newtonsoft
-    /// for netstandard2.0 compatibility. Only handles flat string/number values.
-    /// </summary>
-    private static string? ExtractJsonValue(string json, string key)
-    {
-        var searchKey = $"\"{key}\"";
-        var keyIndex = json.IndexOf(searchKey, StringComparison.Ordinal);
-        if (keyIndex < 0) return null;
-
-        var colonIndex = json.IndexOf(':', keyIndex + searchKey.Length);
-        if (colonIndex < 0) return null;
-
-        var valueStart = colonIndex + 1;
-        // Skip whitespace
-        while (valueStart < json.Length && char.IsWhiteSpace(json[valueStart]))
-            valueStart++;
-
-        if (valueStart >= json.Length) return null;
-
-        if (json[valueStart] == '"')
-        {
-            // String value
-            var valueEnd = json.IndexOf('"', valueStart + 1);
-            return valueEnd > valueStart
-                ? json.Substring(valueStart + 1, valueEnd - valueStart - 1)
-                : null;
-        }
-        else
-        {
-            // Number or other non-quoted value
-            var valueEnd = valueStart;
-            while (valueEnd < json.Length && json[valueEnd] != ',' && json[valueEnd] != '}' && !char.IsWhiteSpace(json[valueEnd]))
-                valueEnd++;
-
-            return json.Substring(valueStart, valueEnd - valueStart);
-        }
-    }
 }

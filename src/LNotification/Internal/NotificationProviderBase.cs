@@ -91,6 +91,8 @@ public abstract class NotificationProviderBase
 
         var maxRetries = _maxRetries < 0 ? 0 : _maxRetries;
         var retryDelayMs = _retryDelayMs < 0 ? 0 : _retryDelayMs;
+        const int MaxTotalDelayMs = 300_000; // 5 minutes cap
+        var accumulatedDelay = 0;
 
         for (var attempt = 0; attempt <= maxRetries; attempt++)
         {
@@ -111,6 +113,17 @@ public abstract class NotificationProviderBase
                     if (delayLong > int.MaxValue) delayLong = int.MaxValue;
 
                     var delay = (int)delayLong;
+
+                    if (accumulatedDelay + delay > MaxTotalDelayMs)
+                    {
+                        Logger.LogWarning(
+                            ex,
+                            "Retry budget exceeded after {TotalDelay}ms; aborting further retries",
+                            accumulatedDelay);
+                        throw lastException!;
+                    }
+
+                    accumulatedDelay += delay;
 
                     Logger.LogWarning(ex,
                         "Attempt {Attempt}/{MaxRetries} failed, retrying in {Delay}ms",
