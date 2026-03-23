@@ -20,6 +20,15 @@ public abstract class NotificationProviderBase
     private readonly int _retryDelayMs;
     protected readonly int TimeoutSeconds;
 
+    private static readonly IReadOnlyDictionary<string, Type> _providerTypes =
+            System.Reflection.Assembly.GetExecutingAssembly()
+                .GetTypes()
+                .Where(t => t.IsClass && !t.IsAbstract && t.IsSubclassOf(typeof(NotificationProviderBase)))
+                .ToDictionary(
+                    t => ReplaceIgnoreCase(t.Name,"Provider", ""),
+                    t => t,
+                    StringComparer.OrdinalIgnoreCase);
+
     protected NotificationProviderBase(
         IHttpClientFactory factory,
         ILogger logger,
@@ -38,6 +47,33 @@ public abstract class NotificationProviderBase
     }
 
     internal abstract Type SupportedSendOptionsType { get; }
+
+    internal static Type? FindProviderType(string providerName)
+    {
+        var normalized = ReplaceIgnoreCase(providerName,"Provider", "");
+        _providerTypes.TryGetValue(normalized, out var type);
+        return type;
+    }
+    
+    internal static string ReplaceIgnoreCase(string source, string oldValue, string newValue)
+    {
+        if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(oldValue))
+            return source;
+
+        var result   = new System.Text.StringBuilder();
+        int startIdx = 0;
+        int foundIdx;
+
+        while ((foundIdx = source.IndexOf(oldValue, startIdx, StringComparison.OrdinalIgnoreCase)) >= 0)
+        {
+            result.Append(source, startIdx, foundIdx - startIdx);
+            result.Append(newValue ?? string.Empty);
+            startIdx = foundIdx + oldValue.Length;
+        }
+
+        result.Append(source, startIdx, source.Length - startIdx);
+        return result.ToString();
+    }
 
     public async Task<bool> SendAsync(
         string message,

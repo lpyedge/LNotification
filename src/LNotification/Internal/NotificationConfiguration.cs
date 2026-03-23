@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace LNotification.Internal;
 
-internal sealed class NotificationConfiguration
+public sealed class NotificationConfiguration
 {
     internal NotificationConfiguration(IConfiguration configuration)
     {

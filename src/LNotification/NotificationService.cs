@@ -27,7 +27,7 @@ public sealed class NotificationService : IDisposable
     private ConcurrentDictionary<(Type, string), NotificationProviderBase> _providerCache = new();
     private readonly IDisposable _reloadSubscription;
 
-    internal NotificationService(
+    public NotificationService(
         IHttpClientFactory httpClientFactory,
         ILoggerFactory loggerFactory,
         NotificationConfiguration configuration)
@@ -53,6 +53,23 @@ public sealed class NotificationService : IDisposable
         var provider = GetOrCreateProvider<TProvider>(resolvedAlias);
         return provider.SendAsync(message, resolvedAlias);
     }
+
+    public Task<bool> SendAsync(
+        string providerName,
+        string message,
+        string? alias = null)
+    {
+        var providerType = NotificationProviderBase.FindProviderType(providerName)
+            ?? throw new ArgumentException($"Unknown provider: '{providerName}'.", nameof(providerName));
+
+        var resolvedAlias = alias ?? "default";
+        var getOrCreate = typeof(NotificationService)
+            .GetMethod(nameof(GetOrCreateProvider), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .MakeGenericMethod(providerType);
+        var provider = (NotificationProviderBase)getOrCreate.Invoke(this, new object[] { resolvedAlias })!;
+        return provider.SendAsync(message, resolvedAlias);
+    }
+ 
 
     public Task<bool> SendAsync<TProvider, TOptions>(
         string message,
